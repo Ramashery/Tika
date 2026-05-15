@@ -1,11 +1,11 @@
 // --- FIREBASE CONFIGURATION (tika-c756e) ---
 const firebaseConfig = {
-  apiKey: "AIzaSyD_placeholder_replace_with_web_api_key",
+  apiKey: "AIzaSyCuUGjxzWMRueB5_y4rMRQK5WRE66g2vVM",
   authDomain: "tika-c756e.firebaseapp.com",
   projectId: "tika-c756e",
   storageBucket: "tika-c756e.firebasestorage.app",
   messagingSenderId: "107031456777379880366",
-  appId: "replace_with_web_app_id"
+  appId: "1:311456375252:web:d42f82dd72f5cece8d3641"
 };
 
 // NOTE: Replace apiKey and appId above with values from Firebase Console →
