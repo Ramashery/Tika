@@ -9,7 +9,7 @@
         var hash = window.location.hash;
         try {
             var decodedPath = decodeURIComponent(path);
-            var cleanPath = decodedPath.replace(/\/{2,}/g, '/').toLowerCase();
+            var cleanPath = decodedPath.replace(/\/{2,}/g, '/');
             if (path !== cleanPath) {
                 window.location.replace(cleanPath + search + hash);
             }
