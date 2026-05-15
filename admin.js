@@ -5,7 +5,7 @@ const firebaseConfig = {
     projectId: "tika-c756e",
     storageBucket: "tika-c756e.firebasestorage.app",
     messagingSenderId: "107031456777379880366",
-    appId: "replace_with_web_app_id"
+    appId: "1:311456375252:web:d42f82dd72f5cece8d3641"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
