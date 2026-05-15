@@ -1,6 +1,6 @@
 // --- FIREBASE CONFIGURATION (tika-c756e) ---
 const firebaseConfig = {
-    apiKey: "AIzaSyD_placeholder_replace_with_web_api_key",
+    apiKey: "AIzaSyCuUGjxzWMRueB5_y4rMRQK5WRE66g2vVM",
     authDomain: "tika-c756e.firebaseapp.com",
     projectId: "tika-c756e",
     storageBucket: "tika-c756e.firebasestorage.app",
