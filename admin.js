@@ -1,47 +1,43 @@
-// --- FIREBASE CONFIGURATION (tika-c756e) ---
+// --- FIREBASE CONFIG (tika-c756e) ---
 const firebaseConfig = {
     apiKey: "AIzaSyCuUGjxzWMRueB5_y4rMRQK5WRE66g2vVM",
     authDomain: "tika-c756e.firebaseapp.com",
     projectId: "tika-c756e",
     storageBucket: "tika-c756e.firebasestorage.app",
-    messagingSenderId: "107031456777379880366",
-    appId: "1:311456375252:web:d42f82dd72f5cece8d3641"
+    messagingSenderId: "311456375252",
+    appId: "1:311456375252:web:d42f82dd72f5cece8d3641",
+    measurementId: "G-87RM7S166J"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-// --- STATE ---
+// --- CONFIG ---
+const SUPPORTED_LANGS = ['ru', 'ka'];
+const LANG_NAMES = { ru: 'Русский', ka: 'ქართული' };
+const COLLECTIONS = ['services', 'blog', 'creative', 'reviews'];
+const COLLECTION_LABELS = { services: 'Услуги', blog: 'Блог', creative: 'Творческое', reviews: 'Отзывы' };
 let siteData = {};
-const defaultLang = 'ru';
-const supportedLangs = ['ru'];
 
 // --- DATA LOADING ---
 async function loadData() {
-    const freshSiteData = {};
     try {
-        const collections = ['services', 'blog', 'creative', 'reviews'];
-        const dataPromises = [
+        const [homeDoc, ...snaps] = await Promise.all([
             db.collection('home').doc('content').get(),
-            ...collections.map(col => db.collection(col).get())
-        ];
-        const [homeDoc, ...snapshots] = await Promise.all(dataPromises);
-
-        const processDocData = (data) => {
-            if (data && typeof data.schemaJsonLd === 'string' && data.schemaJsonLd.trim().startsWith('{')) {
-                try { data.schemaJsonLd = JSON.parse(data.schemaJsonLd); } catch (e) { data.schemaJsonLd = {}; }
-            }
-            return data;
+            ...COLLECTIONS.map(c => db.collection(c).get())
+        ]);
+        const proc = d => {
+            if (d && typeof d.schemaJsonLd === 'string') { try { d.schemaJsonLd = JSON.parse(d.schemaJsonLd); } catch { d.schemaJsonLd = {}; } }
+            return d;
         };
-
-        freshSiteData.home = homeDoc.exists ? processDocData(homeDoc.data()) : {};
-        collections.forEach((col, index) => {
-            freshSiteData[col] = snapshots[index].docs.map(doc => ({ id: doc.id, ...processDocData(doc.data()) }));
+        const data = { home: homeDoc.exists ? proc(homeDoc.data()) : {} };
+        COLLECTIONS.forEach((col, i) => {
+            data[col] = snaps[i].docs.map(doc => ({ id: doc.id, ...proc(doc.data()) }));
         });
-        return freshSiteData;
-    } catch (error) {
-        console.error("Error loading data:", error);
-        alert("Ошибка загрузки данных. Проверьте консоль.");
+        return data;
+    } catch (e) {
+        console.error('loadData error:', e);
+        alert('Ошибка загрузки: ' + e.message);
         return {};
     }
 }
@@ -49,114 +45,116 @@ async function loadData() {
 // --- RENDER ADMIN PANEL ---
 function renderAdminPanel() {
     renderAdminHome();
-    renderAdminSection('services');
-    renderAdminSection('blog');
-    renderAdminSection('creative');
-    renderAdminSection('reviews');
+    COLLECTIONS.forEach(col => renderAdminSection(col));
 }
 
+// --- HOME FORM ---
 function renderAdminHome() {
     const container = document.querySelector('[data-tab-content="home"]');
     if (!container) return;
-    const home = siteData.home || {};
+    const d = siteData.home || {};
     container.innerHTML = `
         <h2>Главная страница</h2>
         <div class="admin-form">
-            <label>H1 заголовок</label>
-            <input type="text" id="home-h1" value="${escHtml(home.h1 || '')}" placeholder="Заголовок страницы">
-            
-            <label>Подзаголовок (HTML)</label>
-            <textarea id="home-subtitle" rows="4">${escHtml(home.subtitle || '')}</textarea>
-            
-            <label>SEO Title</label>
-            <input type="text" id="home-seoTitle" value="${escHtml(home.seoTitle || '')}" placeholder="Tika — Грузинский язык для русскоязычных">
-            
-            <label>Meta Description</label>
-            <textarea id="home-metaDescription" rows="3">${escHtml(home.metaDescription || '')}</textarea>
-            
-            <label>OG Title</label>
-            <input type="text" id="home-ogTitle" value="${escHtml(home.ogTitle || '')}">
-            
-            <label>OG Description</label>
-            <textarea id="home-ogDescription" rows="3">${escHtml(home.ogDescription || '')}</textarea>
-            
+            <label>H1 заголовок (RU)</label>
+            <input type="text" id="home-h1" value="${esc(d.h1 || '')}" placeholder="Заголовок на русском">
+            <label>H1 заголовок (KA)</label>
+            <input type="text" id="home-h1-ka" value="${esc(d.h1Ka || '')}" placeholder="სათაური ქართულად">
+            <label>Подзаголовок (RU, HTML)</label>
+            <textarea id="home-subtitle" rows="4">${esc(d.subtitle || '')}</textarea>
+            <label>Подзаголовок (KA, HTML)</label>
+            <textarea id="home-subtitle-ka" rows="4">${esc(d.subtitleKa || '')}</textarea>
+            <label>SEO Title (RU)</label>
+            <input type="text" id="home-seoTitle" value="${esc(d.seoTitle || '')}">
+            <label>SEO Title (KA)</label>
+            <input type="text" id="home-seoTitle-ka" value="${esc(d.seoTitleKa || '')}">
+            <label>Meta Description (RU)</label>
+            <textarea id="home-metaDescription" rows="3">${esc(d.metaDescription || '')}</textarea>
+            <label>Meta Description (KA)</label>
+            <textarea id="home-metaDescription-ka" rows="3">${esc(d.metaDescriptionKa || '')}</textarea>
+            <label>OG Title (RU)</label>
+            <input type="text" id="home-ogTitle" value="${esc(d.ogTitle || '')}">
+            <label>OG Description (RU)</label>
+            <textarea id="home-ogDescription" rows="2">${esc(d.ogDescription || '')}</textarea>
             <label>OG Image URL</label>
-            <input type="text" id="home-ogImage" value="${escHtml(home.ogImage || '')}" placeholder="https://...">
-            
-            <label>Фоновый HTML (анимация/iframe)</label>
-            <textarea id="home-backgroundHtml" rows="5">${escHtml(home.backgroundHtml || '')}</textarea>
-            
-            <label>Schema JSON-LD (JSON)</label>
-            <textarea id="home-schemaJsonLd" rows="6">${typeof home.schemaJsonLd === 'object' ? JSON.stringify(home.schemaJsonLd, null, 2) : escHtml(home.schemaJsonLd || '')}</textarea>
-            
+            <input type="text" id="home-ogImage" value="${esc(d.ogImage || '')}" placeholder="https://...">
+            <label>Фоновый HTML</label>
+            <textarea id="home-backgroundHtml" rows="5">${esc(d.backgroundHtml || '')}</textarea>
+            <label>Schema JSON-LD</label>
+            <textarea id="home-schemaJsonLd" rows="6">${typeof d.schemaJsonLd === 'object' ? JSON.stringify(d.schemaJsonLd, null, 2) : esc(d.schemaJsonLd || '')}</textarea>
             <button onclick="saveHome()">Сохранить главную страницу</button>
-            <p id="home-save-status" style="margin-top:8px;color:var(--color-accent)"></p>
+            <p id="home-save-status" style="color:var(--color-accent);min-height:1.2em"></p>
         </div>
     `;
 }
 
 async function saveHome() {
     const data = {
-        h1: document.getElementById('home-h1').value,
-        subtitle: document.getElementById('home-subtitle').value,
-        seoTitle: document.getElementById('home-seoTitle').value,
-        metaDescription: document.getElementById('home-metaDescription').value,
-        ogTitle: document.getElementById('home-ogTitle').value,
-        ogDescription: document.getElementById('home-ogDescription').value,
-        ogImage: document.getElementById('home-ogImage').value,
-        backgroundHtml: document.getElementById('home-backgroundHtml').value,
-        lang: 'ru',
-        lastModified: new Date().toISOString(),
+        h1: val('home-h1'), h1Ka: val('home-h1-ka'),
+        subtitle: val('home-subtitle'), subtitleKa: val('home-subtitle-ka'),
+        seoTitle: val('home-seoTitle'), seoTitleKa: val('home-seoTitle-ka'),
+        metaDescription: val('home-metaDescription'), metaDescriptionKa: val('home-metaDescription-ka'),
+        ogTitle: val('home-ogTitle'), ogDescription: val('home-ogDescription'),
+        ogImage: val('home-ogImage'), backgroundHtml: val('home-backgroundHtml'),
+        lang: 'ru', lastModified: new Date().toISOString(),
     };
-    const schemaRaw = document.getElementById('home-schemaJsonLd').value.trim();
-    if (schemaRaw) {
-        try { data.schemaJsonLd = JSON.parse(schemaRaw); } catch (e) { data.schemaJsonLd = schemaRaw; }
-    } else {
-        data.schemaJsonLd = {};
-    }
+    const schema = val('home-schemaJsonLd').trim();
+    if (schema) { try { data.schemaJsonLd = JSON.parse(schema); } catch { data.schemaJsonLd = schema; } }
+    else { data.schemaJsonLd = {}; }
+
     try {
         await db.collection('home').doc('content').set(data, { merge: true });
-        document.getElementById('home-save-status').textContent = '✓ Сохранено';
         siteData.home = { ...siteData.home, ...data };
-        setTimeout(() => { document.getElementById('home-save-status').textContent = ''; }, 3000);
+        showStatus('home-save-status', '✓ Сохранено');
     } catch (e) {
-        document.getElementById('home-save-status').textContent = `✗ Ошибка: ${e.message}`;
+        showStatus('home-save-status', `✗ ${e.message}`, true);
     }
 }
 
-// --- COLLECTION SECTION RENDERING ---
-const SECTION_LABELS = {
-    services: 'Услуги',
-    blog: 'Блог',
-    creative: 'Творческое',
-    reviews: 'Отзывы',
-};
-
+// --- SECTION RENDERING ---
 function renderAdminSection(key) {
     const container = document.querySelector(`[data-tab-content="${key}"]`);
     if (!container) return;
     const items = siteData[key] || [];
-    const label = SECTION_LABELS[key] || key;
+    const label = COLLECTION_LABELS[key] || key;
 
-    const itemsHtml = items.map((item, index) => renderItemCard(item, key, index)).join('');
+    // Группируем по языкам
+    const byLang = {};
+    SUPPORTED_LANGS.forEach(l => byLang[l] = []);
+    items.forEach(item => {
+        const l = item.lang || 'ru';
+        if (byLang[l]) byLang[l].push(item);
+        else byLang['ru'].push(item);
+    });
+
+    const langGroupsHTML = SUPPORTED_LANGS.map(lang => {
+        const langItems = byLang[lang];
+        const itemsHTML = langItems.length
+            ? langItems.map(item => renderItemCard(item, key)).join('')
+            : `<p style="opacity:0.5;font-size:0.9rem">Нет записей на ${LANG_NAMES[lang]}</p>`;
+        return `
+            <div class="admin-lang-group">
+                <h4>${LANG_NAMES[lang]} (${lang})</h4>
+                <div class="admin-items-list" id="list-${key}-${lang}">${itemsHTML}</div>
+            </div>`;
+    }).join('');
 
     container.innerHTML = `
         <h2>${label}</h2>
-        <button class="btn-add" onclick="addItem('${key}')">+ Добавить запись</button>
-        <div class="admin-items-list" id="list-${key}">
-            ${itemsHtml || '<p style="opacity:0.5">Записей пока нет.</p>'}
+        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+            ${SUPPORTED_LANGS.map(l => `<button class="btn-add" onclick="addItem('${key}','${l}')">+ Добавить (${l.toUpperCase()})</button>`).join('')}
         </div>
+        ${langGroupsHTML}
     `;
 }
 
-function renderItemCard(item, collection, index) {
-    const statusBadge = item.status === 'archived'
-        ? '<span style="color:#ff6b6b;font-size:12px"> [архив]</span>'
-        : '';
+function renderItemCard(item, collection) {
+    const statusBadge = item.status === 'archived' ? '<span style="color:#f0ad4e;font-size:11px"> [архив]</span>' : '';
+    const statusDraft = item.status === 'draft' ? '<span style="color:#aaa;font-size:11px"> [черновик]</span>' : '';
     return `
         <div class="admin-item-card" id="item-card-${collection}-${item.id}">
-            <div class="admin-item-header" onclick="toggleItemCard('${collection}','${item.id}')">
-                <strong>${escHtml(item.title || '(без названия)')}</strong>${statusBadge}
+            <div class="admin-item-header" onclick="toggleCard('${collection}','${item.id}')">
+                <strong>${esc(item.title || '(без названия)')}</strong>${statusBadge}${statusDraft}
                 <span class="admin-item-toggle">▼</span>
             </div>
             <div class="admin-item-body" id="item-body-${collection}-${item.id}" style="display:none">
@@ -172,75 +170,81 @@ function renderItemCard(item, collection, index) {
 }
 
 function renderItemForm(item, collection) {
-    const isReviews = collection === 'reviews';
+    const langOptions = SUPPORTED_LANGS.map(l =>
+        `<option value="${l}" ${item.lang === l ? 'selected' : ''}>${LANG_NAMES[l]} (${l})</option>`
+    ).join('');
+
     return `
+        <label>Язык</label>
+        <select data-field="lang">${langOptions}</select>
+
         <label>Заголовок (title)</label>
-        <input type="text" data-field="title" value="${escHtml(item.title || '')}">
-        
-        <label>H1 (если отличается от title)</label>
-        <input type="text" data-field="h1" value="${escHtml(item.h1 || '')}">
+        <input type="text" data-field="title" value="${esc(item.title || '')}">
+
+        <label>H1 (если отличается)</label>
+        <input type="text" data-field="h1" value="${esc(item.h1 || '')}">
 
         <label>Подзаголовок (subtitle)</label>
-        <input type="text" data-field="subtitle" value="${escHtml(item.subtitle || '')}">
+        <input type="text" data-field="subtitle" value="${esc(item.subtitle || '')}">
 
         <label>Краткое описание (для карточки)</label>
-        <textarea data-field="description" rows="3">${escHtml(item.description || '')}</textarea>
+        <textarea data-field="description" rows="3">${esc(item.description || '')}</textarea>
 
-        ${isReviews ? `
-        <label>Автор отзыва</label>
-        <input type="text" data-field="author" value="${escHtml(item.author || '')}">
-        <label>Откуда (город, страна)</label>
-        <input type="text" data-field="authorFrom" value="${escHtml(item.authorFrom || '')}">
-        <label>Рейтинг (1–5)</label>
-        <input type="number" data-field="rating" min="1" max="5" value="${escHtml(String(item.rating || 5))}">
-        ` : ''}
+        <label>Основной контент (mainContent)</label>
+        <textarea data-field="mainContent" rows="12">${esc(item.mainContent || '')}</textarea>
 
-        <label>Основной контент (mainContent, HTML/текст)</label>
-        <textarea data-field="mainContent" rows="12">${escHtml(item.mainContent || '')}</textarea>
+        <label>URL Slug (латиница)</label>
+        <input type="text" data-field="urlSlug" value="${esc(item.urlSlug || '')}">
 
-        <label>URL Slug (латиница, без пробелов)</label>
-        <input type="text" data-field="urlSlug" value="${escHtml(item.urlSlug || '')}">
+        <label>Translation Group Key (одинаковый для RU+KA переводов)</label>
+        <input type="text" data-field="translationGroupKey" value="${esc(item.translationGroupKey || '')}" placeholder="уникальный-ключ">
 
-        <label>Цена (если есть)</label>
-        <input type="text" data-field="price" value="${escHtml(item.price || '')}" placeholder="2000 ₽/месяц">
+        <label>Цена</label>
+        <input type="text" data-field="price" value="${esc(item.price || '')}" placeholder="2000 ₽/месяц">
 
-        <label>Media (URLs изображений, по одному на строку)</label>
-        <textarea data-field="media" rows="3">${escHtml((item.media || []).join('\n'))}</textarea>
+        <label>Media (URLs, по одному на строку)</label>
+        <textarea data-field="media" rows="3">${esc((item.media || []).join('\n'))}</textarea>
 
         <label>Alt текст главного изображения</label>
-        <input type="text" data-field="mainImageAlt" value="${escHtml(item.mainImageAlt || '')}">
+        <input type="text" data-field="mainImageAlt" value="${esc(item.mainImageAlt || '')}">
 
         <label>SEO Title</label>
-        <input type="text" data-field="seoTitle" value="${escHtml(item.seoTitle || '')}">
+        <input type="text" data-field="seoTitle" value="${esc(item.seoTitle || '')}">
 
         <label>Meta Description</label>
-        <textarea data-field="metaDescription" rows="3">${escHtml(item.metaDescription || '')}</textarea>
+        <textarea data-field="metaDescription" rows="3">${esc(item.metaDescription || '')}</textarea>
 
         <label>OG Title</label>
-        <input type="text" data-field="ogTitle" value="${escHtml(item.ogTitle || '')}">
+        <input type="text" data-field="ogTitle" value="${esc(item.ogTitle || '')}">
 
         <label>OG Description</label>
-        <textarea data-field="ogDescription" rows="3">${escHtml(item.ogDescription || '')}</textarea>
-
-        <label>Фоновый HTML</label>
-        <textarea data-field="backgroundHtml" rows="4">${escHtml(item.backgroundHtml || '')}</textarea>
+        <textarea data-field="ogDescription" rows="2">${esc(item.ogDescription || '')}</textarea>
 
         <label>Schema JSON-LD</label>
-        <textarea data-field="schemaJsonLd" rows="5">${typeof item.schemaJsonLd === 'object' ? JSON.stringify(item.schemaJsonLd, null, 2) : escHtml(item.schemaJsonLd || '')}</textarea>
+        <textarea data-field="schemaJsonLd" rows="4">${typeof item.schemaJsonLd === 'object' ? JSON.stringify(item.schemaJsonLd, null, 2) : esc(item.schemaJsonLd || '')}</textarea>
+
+        <label>Sitemap Priority (0.1–1.0)</label>
+        <input type="number" step="0.1" min="0.1" max="1.0" data-field="sitemapPriority" value="${item.sitemapPriority || '0.7'}">
+
+        <label>Sitemap Changefreq</label>
+        <select data-field="sitemapChangefreq">
+            <option value="monthly" ${(!item.sitemapChangefreq || item.sitemapChangefreq==='monthly')?'selected':''}>monthly</option>
+            <option value="weekly" ${item.sitemapChangefreq==='weekly'?'selected':''}>weekly</option>
+            <option value="yearly" ${item.sitemapChangefreq==='yearly'?'selected':''}>yearly</option>
+        </select>
 
         <label>Статус</label>
         <select data-field="status">
-            <option value="published" ${(item.status || 'published') === 'published' ? 'selected' : ''}>Опубликовано</option>
-            <option value="draft" ${item.status === 'draft' ? 'selected' : ''}>Черновик</option>
-            <option value="archived" ${item.status === 'archived' ? 'selected' : ''}>Архив</option>
+            <option value="published" ${(!item.status||item.status==='published')?'selected':''}>Опубликовано</option>
+            <option value="draft" ${item.status==='draft'?'selected':''}>Черновик</option>
+            <option value="archived" ${item.status==='archived'?'selected':''}>Архив</option>
         </select>
     `;
 }
 
-function toggleItemCard(collection, id) {
+function toggleCard(collection, id) {
     const body = document.getElementById(`item-body-${collection}-${id}`);
-    if (!body) return;
-    body.style.display = body.style.display === 'none' ? 'block' : 'none';
+    if (body) body.style.display = body.style.display === 'none' ? 'block' : 'none';
 }
 
 async function saveItem(collection, id) {
@@ -248,18 +252,17 @@ async function saveItem(collection, id) {
     const statusEl = document.getElementById(`status-${collection}-${id}`);
     if (!card || !statusEl) return;
 
-    const data = { lang: 'ru', lastModified: new Date().toISOString() };
-
+    const data = { lastModified: new Date().toISOString() };
     card.querySelectorAll('[data-field]').forEach(el => {
         const field = el.dataset.field;
         if (field === 'media') {
             data[field] = el.value.split('\n').map(s => s.trim()).filter(Boolean);
         } else if (field === 'schemaJsonLd') {
             const raw = el.value.trim();
-            if (raw) { try { data[field] = JSON.parse(raw); } catch (e) { data[field] = raw; } }
+            if (raw) { try { data[field] = JSON.parse(raw); } catch { data[field] = raw; } }
             else { data[field] = {}; }
-        } else if (field === 'rating') {
-            data[field] = parseInt(el.value) || 5;
+        } else if (field === 'sitemapPriority') {
+            data[field] = parseFloat(el.value) || 0.7;
         } else {
             data[field] = el.value;
         }
@@ -267,53 +270,47 @@ async function saveItem(collection, id) {
 
     try {
         await db.collection(collection).doc(id).set(data, { merge: true });
-        statusEl.textContent = '✓ Сохранено';
-        statusEl.style.color = 'var(--color-accent)';
         const idx = (siteData[collection] || []).findIndex(i => i.id === id);
-        if (idx > -1) siteData[collection][idx] = { ...siteData[collection][idx], ...data, id };
-        setTimeout(() => { statusEl.textContent = ''; }, 3000);
+        if (idx > -1) siteData[collection][idx] = { ...siteData[collection][idx], ...data };
+        showStatus(`status-${collection}-${id}`, '✓ Сохранено');
+        // Обновляем секцию чтобы перегруппировать по языку если изменился
+        renderAdminSection(collection);
     } catch (e) {
-        statusEl.textContent = `✗ Ошибка: ${e.message}`;
-        statusEl.style.color = '#ff6b6b';
+        showStatus(`status-${collection}-${id}`, `✗ ${e.message}`, true);
     }
 }
 
 async function deleteItem(collection, id) {
-    if (!confirm('Удалить запись? Это действие нельзя отменить.')) return;
+    if (!confirm('Удалить запись навсегда?')) return;
     try {
         await db.collection(collection).doc(id).delete();
         siteData[collection] = (siteData[collection] || []).filter(i => i.id !== id);
         renderAdminSection(collection);
     } catch (e) {
-        alert(`Ошибка удаления: ${e.message}`);
+        alert('Ошибка: ' + e.message);
     }
 }
 
-async function addItem(collection) {
+async function addItem(collection, lang) {
     const newItem = {
         title: 'Новая запись',
-        h1: '',
-        subtitle: '',
-        description: '',
-        mainContent: '',
-        urlSlug: `novaya-zapis-${Date.now()}`,
-        lang: 'ru',
-        status: 'draft',
-        media: [],
-        seoTitle: '',
-        metaDescription: '',
+        h1: '', subtitle: '', description: '', mainContent: '',
+        urlSlug: `novaya-${Date.now()}`,
+        lang: lang, status: 'draft',
+        media: [], seoTitle: '', metaDescription: '',
+        translationGroupKey: '',
+        sitemapPriority: 0.7, sitemapChangefreq: 'monthly',
         lastModified: new Date().toISOString(),
     };
     try {
-        const docRef = await db.collection(collection).add(newItem);
-        newItem.id = docRef.id;
+        const ref = await db.collection(collection).add(newItem);
+        newItem.id = ref.id;
         if (!siteData[collection]) siteData[collection] = [];
         siteData[collection].unshift(newItem);
         renderAdminSection(collection);
-        // Auto-open new card
-        setTimeout(() => toggleItemCard(collection, newItem.id), 100);
+        setTimeout(() => toggleCard(collection, newItem.id), 100);
     } catch (e) {
-        alert(`Ошибка создания: ${e.message}`);
+        alert('Ошибка: ' + e.message);
     }
 }
 
@@ -324,8 +321,7 @@ function initTabs() {
             document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             tab.classList.add('active');
-            const key = tab.dataset.tab;
-            document.querySelector(`[data-tab-content="${key}"]`)?.classList.add('active');
+            document.querySelector(`[data-tab-content="${tab.dataset.tab}"]`)?.classList.add('active');
         });
     });
 }
@@ -334,9 +330,6 @@ function initTabs() {
 function initAuth() {
     const loginScreen = document.getElementById('login-screen');
     const adminContainer = document.querySelector('.admin-container');
-    const loginForm = document.getElementById('login-form');
-    const loginError = document.getElementById('login-error');
-    const logoutBtn = document.getElementById('logout-btn');
 
     auth.onAuthStateChanged(async user => {
         if (user) {
@@ -351,27 +344,31 @@ function initAuth() {
         }
     });
 
-    loginForm.addEventListener('submit', async (e) => {
+    document.getElementById('login-form').addEventListener('submit', async e => {
         e.preventDefault();
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
         try {
             await auth.signInWithEmailAndPassword(email, password);
         } catch (err) {
-            loginError.textContent = 'Ошибка входа: ' + err.message;
+            document.getElementById('login-error').textContent = 'Ошибка: ' + err.message;
         }
     });
 
-    logoutBtn.addEventListener('click', () => auth.signOut());
+    document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
 }
 
 // --- HELPERS ---
-function escHtml(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function val(id) { return document.getElementById(id)?.value || ''; }
+function showStatus(id, msg, isError = false) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color = isError ? '#ff6b6b' : 'var(--color-accent)';
+    setTimeout(() => { el.textContent = ''; }, 3000);
 }
 
 // --- INIT ---

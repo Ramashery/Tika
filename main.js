@@ -1,680 +1,465 @@
-// --- FIREBASE CONFIGURATION (tika-c756e) ---
+// --- FIREBASE CONFIG (tika-c756e) ---
 const firebaseConfig = {
-  apiKey: "AIzaSyCuUGjxzWMRueB5_y4rMRQK5WRE66g2vVM",
-  authDomain: "tika-c756e.firebaseapp.com",
-  projectId: "tika-c756e",
-  storageBucket: "tika-c756e.firebasestorage.app",
-  messagingSenderId: "107031456777379880366",
-  appId: "1:311456375252:web:d42f82dd72f5cece8d3641"
+    apiKey: "AIzaSyCuUGjxzWMRueB5_y4rMRQK5WRE66g2vVM",
+    authDomain: "tika-c756e.firebaseapp.com",
+    projectId: "tika-c756e",
+    storageBucket: "tika-c756e.firebasestorage.app",
+    messagingSenderId: "311456375252",
+    appId: "1:311456375252:web:d42f82dd72f5cece8d3641",
+    measurementId: "G-87RM7S166J"
 };
 
-// NOTE: Replace apiKey and appId above with values from Firebase Console →
-// Project Settings → Your apps → Web app config.
-// The service account key is only for the Python backend (generate_site.py).
+// --- SITE CONFIG ---
+const BASE_PATH = '/Tika';
+const SUPPORTED_LANGS = ['ru', 'ka'];
+const LANG_NAMES = { ru: 'Русский', ka: 'ქართული' };
+const SECTION_LABELS = {
+    ru: { services: 'Услуги', blog: 'Блог', creative: 'Творческое', reviews: 'Отзывы' },
+    ka: { services: 'სერვისები', blog: 'ბლოგი', creative: 'შემოქმედება', reviews: 'გამოხმაურებები' },
+};
+const MENU_LABELS = {
+    ru: { home: 'Главная', services: 'Услуги', blog: 'Блог', creative: 'Творческое', reviews: 'Отзывы' },
+    ka: { home: 'მთავარი', services: 'სერვისები', blog: 'ბლოგი', creative: 'შემოქმედება', reviews: 'გამოხმაურებები' },
+};
+const RELATED_LABEL = { ru: 'Вам также может быть интересно', ka: 'ასევე შეიძლება დაინტერესდეთ' };
+const TOC_LABEL = { ru: 'Содержание', ka: 'სარჩევი' };
+const EYEBROW_LABEL = { ru: 'TIKA · ГРУЗИНСКИЙ ЯЗЫК', ka: 'TIKA · ქართული ენა' };
 
 let db;
 let siteData = {};
-const initialSiteData = {
-    home: { h1: "", subtitle: "", lang: "ru", seoTitle: "Tika", metaDescription: "Грузинский язык для русскоязычных" },
-    services: [], blog: [], creative: [], reviews: []
-};
+let currentLang = 'ru';
 
-const BASE_PATH = '/Tika';
-const mainContentEl = document.querySelector('main');
-let floatingObserver, animateOnceObserver, animateAlwaysObserver;
-
-// --- TRANSLITERATION MAPS ---
-const GEORGIAN_TRANSLIT_MAP = {
-    'ა': 'a', 'ბ': 'b', 'გ': 'g', 'დ': 'd', 'ე': 'e', 'ვ': 'v', 'ზ': 'z', 'თ': 't', 'ი': 'i',
-    'კ': 'k', 'ლ': 'l', 'მ': 'm', 'ნ': 'n', 'ო': 'o', 'პ': 'p', 'ჟ': 'zh', 'რ': 'r', 'ს': 's',
-    'ტ': 't', 'უ': 'u', 'ფ': 'p', 'ქ': 'k', 'ღ': 'gh', 'ყ': 'q', 'შ': 'sh', 'ჩ': 'ch', 'ც': 'ts',
-    'ძ': 'dz', 'წ': 'ts', 'ჭ': 'ch', 'ხ': 'kh', 'ჯ': 'j', 'ჰ': 'h',
-};
-
-const CYRILLIC_TRANSLIT_MAP = {
-    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh', 'з': 'z',
-    'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r',
-    'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
-    'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
-};
-
-function slugify(text) {
-    text = String(text).toLowerCase();
-    let hasGeorgian = false;
-    for (let i = 0; i < text.length; i++) {
-        const charCode = text.charCodeAt(i);
-        if (charCode >= 0x10D0 && charCode <= 0x10FF) { hasGeorgian = true; break; }
-    }
-    if (hasGeorgian) {
-        let transliterated = '';
-        for (let i = 0; i < text.length; i++) transliterated += GEORGIAN_TRANSLIT_MAP[text[i]] || text[i];
-        text = transliterated;
-    }
-    let hasCyrillic = false;
-    for (let i = 0; i < text.length; i++) {
-        const charCode = text.charCodeAt(i);
-        if (charCode >= 0x0400 && charCode <= 0x04FF) { hasCyrillic = true; break; }
-    }
-    if (hasCyrillic) {
-        let transliterated = '';
-        for (let i = 0; i < text.length; i++) transliterated += CYRILLIC_TRANSLIT_MAP[text[i]] || text[i];
-        text = transliterated;
-    }
-    text = text.replace(/[^a-z0-9-]+/g, '-');
-    text = text.replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
-    return text;
+// Читаем язык из data-атрибута (статические страницы) или URL
+function detectLang() {
+    const bodyLang = document.body.dataset.lang;
+    if (bodyLang && SUPPORTED_LANGS.includes(bodyLang)) return bodyLang;
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    // /Tika/ru/... → pathParts = ['Tika','ru',...]
+    const langInPath = pathParts[1];
+    if (langInPath && SUPPORTED_LANGS.includes(langInPath)) return langInPath;
+    return 'ru';
 }
 
-// --- INTERSECTION OBSERVER SETUP (WITH LAZY LOADING) ---
+// --- TRANSLITERATION ---
+const GEO_MAP = {
+    'ა':'a','ბ':'b','გ':'g','დ':'d','ე':'e','ვ':'v','ზ':'z','თ':'t','ი':'i',
+    'კ':'k','ლ':'l','მ':'m','ნ':'n','ო':'o','პ':'p','ჟ':'zh','რ':'r','ს':'s',
+    'ტ':'t','უ':'u','ფ':'p','ქ':'k','ღ':'gh','ყ':'q','შ':'sh','ჩ':'ch','ც':'ts',
+    'ძ':'dz','წ':'ts','ჭ':'ch','ხ':'kh','ჯ':'j','ჰ':'h',
+};
+const CYR_MAP = {
+    'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z',
+    'и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r',
+    'с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'shch',
+    'ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya',
+};
+function slugify(text) {
+    text = String(text).toLowerCase();
+    if ([...text].some(c => c >= '\u10D0' && c <= '\u10FF'))
+        text = [...text].map(c => GEO_MAP[c] || c).join('');
+    if ([...text].some(c => c >= '\u0400' && c <= '\u04FF'))
+        text = [...text].map(c => CYR_MAP[c] || c).join('');
+    return text.replace(/[^a-z0-9-]+/g, '-').replace(/--+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+// --- OBSERVERS ---
+let floatingObserver, animateOnceObserver, animateAlwaysObserver;
 function setupObservers() {
-    if (floatingObserver) floatingObserver.disconnect();
-    if (animateOnceObserver) animateOnceObserver.disconnect();
-    if (animateAlwaysObserver) animateAlwaysObserver.disconnect();
+    [floatingObserver, animateOnceObserver, animateAlwaysObserver].forEach(o => o && o.disconnect());
 
-    floatingObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            const target = entry.target;
-            const isAboveViewport = entry.boundingClientRect.top < 0 && !entry.isIntersecting;
-            if (entry.isIntersecting) {
-                target.classList.add('is-visible');
-                target.classList.remove('is-above');
-            } else {
-                target.classList.remove('is-visible');
-                if (isAboveViewport) target.classList.add('is-above');
-                else target.classList.remove('is-above');
-            }
+    floatingObserver = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            e.target.classList.toggle('is-visible', e.isIntersecting);
+            e.target.classList.toggle('is-above', !e.isIntersecting && e.boundingClientRect.top < 0);
         });
-    }, { threshold: 0, rootMargin: "-50px 0px -50px 0px" });
+    }, { threshold: 0, rootMargin: '-50px 0px -50px 0px' });
 
-    animateOnceObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const target = entry.target;
-                const lazyBackgrounds = Array.from(target.querySelectorAll('[data-bg-src]'));
-                if (target.hasAttribute('data-bg-src')) lazyBackgrounds.push(target);
-                lazyBackgrounds.forEach(el => {
-                    el.style.backgroundImage = `url('${el.dataset.bgSrc}')`;
-                    el.removeAttribute('data-bg-src');
-                });
-                const lazyImage = target.querySelector('img.lazy-load-image[data-src]');
-                if (lazyImage) {
-                    lazyImage.onload = () => { lazyImage.classList.add('loaded'); lazyImage.onload = null; };
-                    lazyImage.src = lazyImage.dataset.src;
-                    lazyImage.removeAttribute('data-src');
-                }
-                target.classList.add('is-visible');
-                observer.unobserve(target);
-            }
+    animateOnceObserver = new IntersectionObserver((entries, obs) => {
+        entries.forEach(e => {
+            if (!e.isIntersecting) return;
+            const t = e.target;
+            [...t.querySelectorAll('[data-bg-src]'), ...(t.hasAttribute('data-bg-src') ? [t] : [])].forEach(el => {
+                el.style.backgroundImage = `url('${el.dataset.bgSrc}')`;
+                el.removeAttribute('data-bg-src');
+            });
+            const img = t.querySelector('img.lazy-load-image[data-src]');
+            if (img) { img.src = img.dataset.src; img.removeAttribute('data-src'); img.onload = () => img.classList.add('loaded'); }
+            t.classList.add('is-visible');
+            obs.unobserve(t);
         });
-    }, { threshold: 0.1, rootMargin: "0px 0px 50px 0px" });
+    }, { threshold: 0.1, rootMargin: '0px 0px 50px 0px' });
 
-    animateAlwaysObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) entry.target.classList.add('is-visible');
-            else entry.target.classList.remove('is-visible');
-        });
-    }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+    animateAlwaysObserver = new IntersectionObserver(entries => {
+        entries.forEach(e => e.target.classList.toggle('is-visible', e.isIntersecting));
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
     document.querySelectorAll('.floating-item').forEach(el => floatingObserver.observe(el));
     document.querySelectorAll('.animate-on-scroll').forEach(el => animateOnceObserver.observe(el));
     document.querySelectorAll('.animate-always').forEach(el => animateAlwaysObserver.observe(el));
 }
 
-// --- SEO TAG RENDERING ---
-function renderSeoTags(data) {
-    document.querySelectorAll('meta[name="description"], meta[property^="og:"], script[type="application/ld+json"], link[rel="canonical"]').forEach(el => el.remove());
-    document.title = data.seoTitle || "Tika — Грузинский язык";
-    document.documentElement.lang = 'ru';
+// --- SEO ---
+function renderSeoTags(data, lang) {
+    document.querySelectorAll('meta[name="description"],meta[property^="og:"],script[type="application/ld+json"],link[rel="canonical"],link[rel="alternate"]').forEach(el => el.remove());
+    document.title = data.seoTitle || 'Tika';
+    document.documentElement.lang = lang;
 
-    const createMeta = (attr, key, value) => {
-        if (value) {
-            const meta = document.createElement('meta');
-            meta.setAttribute(attr, key);
-            meta.content = value;
-            document.head.appendChild(meta);
-        }
+    const addMeta = (attr, key, val) => {
+        if (!val) return;
+        const m = document.createElement('meta');
+        m.setAttribute(attr, key); m.content = val;
+        document.head.appendChild(m);
     };
-
-    createMeta('name', 'description', data.metaDescription);
-    createMeta('property', 'og:title', data.ogTitle || data.seoTitle);
-    createMeta('property', 'og:description', data.ogDescription || data.metaDescription);
-    const mediaArray = data.media || [];
-    const ogImage = data.ogImage || (mediaArray.find && mediaArray.find(url => !/youtube|vimeo/.test(url))) || '';
-    if (ogImage) createMeta('property', 'og:image', ogImage);
+    addMeta('name', 'description', data.metaDescription);
+    addMeta('property', 'og:title', data.ogTitle || data.seoTitle);
+    addMeta('property', 'og:description', data.ogDescription || data.metaDescription);
+    const img = (data.media || []).find(u => !/youtube|vimeo/.test(u)) || data.ogImage || '';
+    if (img) addMeta('property', 'og:image', img);
 
     const canonical = document.createElement('link');
     canonical.rel = 'canonical';
-    let path = window.location.pathname;
-    if (path.length > 1 && !path.endsWith('/')) path += '/';
-    canonical.href = 'https://ramashery.github.io' + path;
+    let p = window.location.pathname;
+    if (p.length > 1 && !p.endsWith('/')) p += '/';
+    canonical.href = 'https://ramashery.github.io' + p;
     document.head.appendChild(canonical);
 
-    let schemaData = data.schemaJsonLd;
-    if (typeof schemaData === 'string' && schemaData.trim()) {
-        try { schemaData = JSON.parse(schemaData); } catch (e) { schemaData = null; }
-    }
-    if (schemaData && typeof schemaData === 'object' && Object.keys(schemaData).length > 0) {
-        const script = document.createElement('script');
-        script.type = 'application/ld+json';
-        script.textContent = JSON.stringify(schemaData);
-        document.head.appendChild(script);
+    let schema = data.schemaJsonLd;
+    if (typeof schema === 'string') { try { schema = JSON.parse(schema); } catch { schema = null; } }
+    if (schema && Object.keys(schema).length) {
+        const s = document.createElement('script');
+        s.type = 'application/ld+json';
+        s.textContent = JSON.stringify(schema);
+        document.head.appendChild(s);
     }
 }
 
-// --- DATA LOADING FROM FIREBASE ---
+// --- FIREBASE DATA ---
 async function loadData() {
-    const freshSiteData = {};
     try {
-        const collections = ['services', 'blog', 'creative', 'reviews'];
-        const dataPromises = [
+        const cols = ['services', 'blog', 'creative', 'reviews'];
+        const [homeDoc, ...snaps] = await Promise.all([
             db.collection('home').doc('content').get(),
-            ...collections.map(col => db.collection(col).get())
-        ];
-        const [homeDoc, ...snapshots] = await Promise.all(dataPromises);
-
-        const processDocData = (data) => {
-            if (data && typeof data.schemaJsonLd === 'string' && data.schemaJsonLd.trim().startsWith('{')) {
-                try { data.schemaJsonLd = JSON.parse(data.schemaJsonLd); } catch (e) { data.schemaJsonLd = {}; }
-            }
-            return data;
+            ...cols.map(c => db.collection(c).get())
+        ]);
+        const proc = d => {
+            if (d && typeof d.schemaJsonLd === 'string') { try { d.schemaJsonLd = JSON.parse(d.schemaJsonLd); } catch { d.schemaJsonLd = {}; } }
+            return d;
         };
-
-        freshSiteData.home = homeDoc.exists ? processDocData(homeDoc.data()) : {};
-        collections.forEach((col, index) => {
-            freshSiteData[col] = snapshots[index].docs
-                .map(doc => ({ id: doc.id, ...processDocData(doc.data()) }))
-                .filter(item => item.status !== 'archived');
+        const data = { home: homeDoc.exists ? proc(homeDoc.data()) : {} };
+        cols.forEach((col, i) => {
+            data[col] = snaps[i].docs.map(doc => ({ id: doc.id, ...proc(doc.data()) })).filter(item => item.status !== 'archived');
         });
-        return freshSiteData;
-    } catch (error) {
-        console.error("Error loading data from Firebase:", error);
-        return JSON.parse(JSON.stringify(initialSiteData));
+        return data;
+    } catch (e) {
+        console.error('Firebase load error:', e);
+        return { home: {}, services: [], blog: [], creative: [], reviews: [] };
     }
 }
 
-// --- CONTENT FORMATTING (CLIENT-SIDE) ---
-function formatContentHtml(content) {
+// --- CONTENT FORMAT ---
+function formatContent(content) {
     if (!content) return '';
-
-    let processedContent = content.replace(/<pre(.*?)>([\s\S]*?)<\/pre>/gim, function(match, attrs, inner) {
-        const codeMatch = inner.match(/^\s*<code(.*?)>([\s\S]*?)<\/code>\s*$/i);
-        if (codeMatch) {
-            const escaped = codeMatch[2].replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            return `<pre${attrs}><code${codeMatch[1]}>${escaped}</code></pre>`;
-        }
-        return `<pre${attrs}>${inner.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
-    });
-
-    processedContent = processedContent.replace(/\r\n/g, '\n');
-    const blocks = processedContent.split(/\n{2,}/);
-
-    const html_parts = blocks.map(block => {
-        const trimmedBlock = block.trim();
-        if (!trimmedBlock) return '';
-
-        const youtubeRegex = /^https?:\/\/(?:www\.|m\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch?v=|watch\?.*&v=|shorts\/))([a-zA-Z0-9_-]{11}).*$/;
-        const imageRegex = /^https?:\/\/[^<>"']+\.(?:jpg|jpeg|png|gif|webp|svg)\s*$/i;
-        const youtubeMatch = trimmedBlock.match(youtubeRegex);
-        const imageMatch = trimmedBlock.match(imageRegex);
-
-        if (/^<(p|div|h[1-6]|ul|ol|li|blockquote|hr|table|pre)/i.test(trimmedBlock)) {
-            return trimmedBlock;
-        } else if (youtubeMatch) {
-            return `<div class="embedded-video" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;background:#000;margin:1.5em 0;border-radius:4px;border:1px solid var(--color-border)"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%" src="https://www.youtube.com/embed/${youtubeMatch[1]}" frameborder="0" allowfullscreen></iframe></div>`;
-        } else if (imageMatch) {
-            const placeholder = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201%201'%3E%3C/svg%3E";
-            return `<p class="animate-on-scroll" style="margin:1.5em 0"><img data-src="${trimmedBlock}" src="${placeholder}" class="lazy-load-image" alt="Embedded content" style="max-width:100%;height:auto;display:block;margin:0 auto;border-radius:4px;border:1px solid var(--color-border)" /></p>`;
-        } else {
-            return `<p>${trimmedBlock.replace(/\n/g, '<br>')}</p>`;
-        }
+    const yt_re = /^https?:\/\/(?:www\.|m\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([a-zA-Z0-9_-]{11})/;
+    const img_re = /^https?:\/\/[^<>"'\s]+\.(?:jpg|jpeg|png|gif|webp|svg)\s*$/i;
+    const ph = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E";
+    const parts = content.replace(/\r\n/g, '\n').split(/\n{2,}/).map(block => {
+        const b = block.trim(); if (!b) return '';
+        const yt = b.match(yt_re); const img = b.match(img_re);
+        if (/^<(p|div|h[1-6]|ul|ol|li|blockquote|hr|table|pre)/i.test(b)) return b;
+        if (yt) return `<div class="embedded-video" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;background:#000;margin:1.5em 0;border-radius:4px"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%" src="https://www.youtube.com/embed/${yt[1]}" frameborder="0" allowfullscreen></iframe></div>`;
+        if (img) return `<p class="animate-on-scroll"><img data-src="${b}" src="${ph}" class="lazy-load-image" alt="" style="max-width:100%;height:auto;display:block;margin:0 auto;border-radius:4px"/></p>`;
+        return `<p>${b.replace(/\n/g, '<br>')}</p>`;
     }).filter(Boolean);
-
-    const groupedHtml = [];
-    const GROUP_SIZE = 3;
-    let temp_group = [];
-    html_parts.forEach(part => {
-        temp_group.push(part);
-        if (temp_group.length >= GROUP_SIZE) {
-            groupedHtml.push(`<div class="content-group">${temp_group.join('')}</div>`);
-            temp_group = [];
-        }
-    });
-    if (temp_group.length > 0) groupedHtml.push(`<div class="content-group">${temp_group.join('')}</div>`);
-    return groupedHtml.join('\n');
+    const groups = []; let tmp = [];
+    parts.forEach(p => { tmp.push(p); if (tmp.length >= 3) { groups.push(`<div class="content-group">${tmp.join('')}</div>`); tmp = []; } });
+    if (tmp.length) groups.push(`<div class="content-group">${tmp.join('')}</div>`);
+    return groups.join('\n');
 }
 
-// --- HOMEPAGE SECTION RENDERING ---
-function renderSection(key, title, items) {
-    const section = document.getElementById(key);
-    if (!section) return;
-    const itemsFromDb = items || siteData[key] || [];
+// --- MENU ---
+function renderMenu(lang) {
+    const menuEl = document.querySelector('.nav-menu');
+    if (!menuEl) return;
+    const labels = MENU_LABELS[lang] || MENU_LABELS.ru;
+    const items = [
+        { label: labels.home,     href: `${BASE_PATH}/${lang}/` },
+        { label: labels.services, href: `${BASE_PATH}/${lang}/#services` },
+        { label: labels.blog,     href: `${BASE_PATH}/${lang}/#blog` },
+        { label: labels.creative, href: `${BASE_PATH}/${lang}/#creative` },
+        { label: labels.reviews,  href: `${BASE_PATH}/${lang}/#reviews` },
+    ];
+    // Lang switcher
+    const switcherItems = SUPPORTED_LANGS.filter(l => l !== lang).map(l => {
+        const path = window.location.pathname.replace(`/${lang}/`, `/${l}/`);
+        return `<li class="lang-switch"><a href="${path}" title="${LANG_NAMES[l]}">${l.toUpperCase()}</a></li>`;
+    }).join('');
+    menuEl.innerHTML = items.map(i => `<li><a href="${i.href}">${i.label}</a></li>`).join('') + switcherItems;
+}
 
-    const cardsHTML = itemsFromDb.map(item => {
-        const itemUrl = `${BASE_PATH}/${key}/${item.urlSlug}/`;
-        const mediaArray = item.media || [];
-        const imageUrl = (mediaArray.find && mediaArray.find(url => !/youtube|vimeo/.test(url))) || '';
-        return `<a href="${itemUrl}" class="item-card animate-on-scroll">
-            <div class="item-card__image" role="img" aria-label="${item.mainImageAlt || item.title || ''}" data-bg-src="${imageUrl}"></div>
+// --- SECTION RENDERING (home) ---
+function renderSection(col, lang) {
+    const section = document.getElementById(col);
+    if (!section) return;
+    const items = (siteData[col] || []).filter(i => i.lang === lang);
+    const labels = SECTION_LABELS[lang] || SECTION_LABELS.ru;
+    const cardsHTML = items.map(item => {
+        const url = `${BASE_PATH}/${lang}/${col}/${item.urlSlug}/`;
+        const img = (item.media || []).find(u => !/youtube|vimeo/.test(u)) || '';
+        return `<a href="${url}" class="item-card animate-on-scroll">
+            <div class="item-card__image" role="img" aria-label="${item.mainImageAlt || item.title || ''}" data-bg-src="${img}"></div>
             <div class="item-card__content">
-                <h3>${item.title}</h3>
+                <h3>${item.title || ''}</h3>
                 <div class="card-subtitle">${item.subtitle || ''}</div>
                 <p>${item.description || ''}</p>
             </div>
         </a>`;
     }).join('');
-
-    section.innerHTML = `<h2 class="animate-on-scroll is-visible">${title}</h2><div class="item-grid">${cardsHTML}</div>`;
+    section.innerHTML = `<h2 class="animate-on-scroll is-visible">${labels[col]}</h2><div class="item-grid">${cardsHTML}</div>`;
 }
 
-// --- FLOATING TOC TOGGLE ---
-let floatingTocToggleInitialized = false;
-function initFloatingTocToggle() {
-    if (floatingTocToggleInitialized) return;
-    const floatingTocWrapper = document.getElementById('floating-toc-wrapper');
-    const toggleBtn = document.getElementById('toc-toggle-btn');
-    const contentPanel = document.getElementById('toc-content-panel');
-    if (!floatingTocWrapper || !toggleBtn || !contentPanel) return;
+// --- HOME PAGE ---
+function hydrateHomePage(lang) {
+    // Сначала пробуем preloaded-data
+    const preEl = document.getElementById('preloaded-data');
+    if (preEl) {
+        try {
+            const data = JSON.parse(preEl.textContent);
+            ['services','blog','creative','reviews'].forEach(col => {
+                if (!siteData[col] || !siteData[col].length) siteData[col] = data[col] || [];
+            });
+            preEl.remove();
+        } catch(e) {}
+    }
+    ['services','blog','creative','reviews'].forEach(col => renderSection(col, lang));
+    document.querySelectorAll('.item-card').forEach(el => el.classList.add('animate-on-scroll'));
 
-    const closeToc = () => {
-        toggleBtn.setAttribute('aria-expanded', 'false');
-        contentPanel.setAttribute('aria-hidden', 'true');
-        contentPanel.classList.remove('is-visible');
-        toggleBtn.classList.remove('is-active');
-    };
-
-    toggleBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        const isExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
-        if (isExpanded) { closeToc(); }
-        else {
-            toggleBtn.setAttribute('aria-expanded', 'true');
-            contentPanel.setAttribute('aria-hidden', 'false');
-            contentPanel.classList.add('is-visible');
-            toggleBtn.classList.add('is-active');
-        }
-    });
-    document.addEventListener('click', (event) => {
-        if (contentPanel.classList.contains('is-visible') && !floatingTocWrapper.contains(event.target)) closeToc();
-    });
-    contentPanel.addEventListener('click', (event) => {
-        if (event.target.closest('a')) setTimeout(closeToc, 100);
-    });
-    floatingTocToggleInitialized = true;
+    const footer = document.getElementById('site-footer');
+    if (footer) {
+        footer.style.display = 'block';
+        footer.innerHTML = `© ${new Date().getFullYear()} Tika`;
+        footer.onclick = () => { window.location.href = `${BASE_PATH}/admin.html`; };
+    }
 }
 
-// --- DETAIL PAGE RENDERING ---
-function renderDetailPage(collection, slug) {
-    const item = siteData[collection]?.find(d => d.urlSlug === slug);
-    const floatingTocWrapper = document.getElementById('floating-toc-wrapper');
-    const tocContentPanel = document.getElementById('toc-content-panel');
-    const tocToggleBtn = document.getElementById('toc-toggle-btn');
+// --- TOC TOGGLE ---
+let tocInitialized = false;
+function initTocToggle() {
+    if (tocInitialized) return;
+    const wrapper = document.getElementById('floating-toc-wrapper');
+    const btn = document.getElementById('toc-toggle-btn');
+    const panel = document.getElementById('toc-content-panel');
+    if (!wrapper || !btn || !panel) return;
+    const close = () => { btn.setAttribute('aria-expanded','false'); panel.setAttribute('aria-hidden','true'); panel.classList.remove('is-visible'); btn.classList.remove('is-active'); };
+    btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const open = btn.getAttribute('aria-expanded') === 'true';
+        if (open) { close(); } else { btn.setAttribute('aria-expanded','true'); panel.setAttribute('aria-hidden','false'); panel.classList.add('is-visible'); btn.classList.add('is-active'); }
+    });
+    document.addEventListener('click', e => { if (panel.classList.contains('is-visible') && !wrapper.contains(e.target)) close(); });
+    panel.addEventListener('click', e => { if (e.target.closest('a')) setTimeout(close, 100); });
+    tocInitialized = true;
+}
+
+// --- DETAIL PAGE ---
+function renderDetailPage(col, slug, lang) {
+    const mainEl = document.querySelector('main');
+    const item = (siteData[col] || []).find(d => d.urlSlug === slug && d.lang === lang);
+    const tocWrapper = document.getElementById('floating-toc-wrapper');
+    const tocPanel = document.getElementById('toc-content-panel');
+    const tocBtn = document.getElementById('toc-toggle-btn');
 
     if (!item) {
-        mainContentEl.innerHTML = `<section class="detail-page-header"><h1>404 — Страница не найдена</h1><p>Запрашиваемой страницы не существует.</p><a href="${BASE_PATH}/">На главную</a></section>`;
-        if (floatingTocWrapper) floatingTocWrapper.style.display = 'none';
+        if (mainEl) mainEl.innerHTML = `<section class="detail-page-header"><h1>404</h1><p>Страница не найдена.</p><a href="${BASE_PATH}/${lang}/">На главную</a></section>`;
+        if (tocWrapper) tocWrapper.style.display = 'none';
         return;
     }
-    renderSeoTags(item);
-    applyCustomBackground(item);
 
-    const rawContent = item.mainContent || '';
-    let tocHtmlContent = '';
-    let finalContentHtml = '';
+    renderSeoTags(item, lang);
 
-    if (rawContent.trim().startsWith('[TOC]')) {
-        const contentWithoutToc = rawContent.replace('[TOC]', '').trim();
-        const contentHtml = formatContentHtml(contentWithoutToc);
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(contentHtml, 'text/html');
+    const raw = item.mainContent || '';
+    let tocHtml = '';
+    let finalHtml = '';
+
+    if (raw.trim().startsWith('[TOC]')) {
+        const content = raw.replace('[TOC]', '').trim();
+        const htmlContent = formatContent(content);
+        const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
         const tocItems = [];
-        doc.querySelectorAll('h2, h3').forEach(header => {
-            const headerText = header.innerText.trim();
-            if (headerText) {
-                const headerSlug = slugify(headerText);
-                header.id = headerSlug;
-                tocItems.push({ level: header.tagName.toLowerCase(), text: headerText, slug: headerSlug });
-            }
+        doc.querySelectorAll('h2,h3').forEach(h => {
+            const txt = h.innerText.trim();
+            if (txt) { const id = slugify(txt); h.id = id; tocItems.push({ level: h.tagName.toLowerCase(), text: txt, id }); }
         });
-        if (tocItems.length > 0) {
-            let tocListHtml = '<ul>';
-            tocItems.forEach(t => {
-                tocListHtml += `<li class="${t.level === 'h3' ? 'toc-level-h3' : ''}"><a href="#${t.slug}">${t.text}</a></li>`;
-            });
-            tocListHtml += '</ul>';
-            tocHtmlContent = tocListHtml;
+        if (tocItems.length) {
+            tocHtml = '<ul>' + tocItems.map(t => `<li class="${t.level === 'h3' ? 'toc-level-h3' : ''}"><a href="#${t.id}">${t.text}</a></li>`).join('') + '</ul>';
         }
-        finalContentHtml = doc.body.innerHTML;
+        finalHtml = doc.body.innerHTML;
     } else {
-        finalContentHtml = formatContentHtml(rawContent);
+        finalHtml = formatContent(raw);
     }
 
-    mainContentEl.innerHTML = `
+    if (mainEl) {
+        mainEl.innerHTML = `
         <section>
             <div class="detail-page-header">
                 <h1 class="animate-always is-visible">${item.h1 || item.title || ''}</h1>
                 ${item.price ? `<div class="detail-price animate-on-scroll"><span>${item.price}</span></div>` : ''}
             </div>
-            <div class="detail-content">${finalContentHtml}</div>
+            <div class="detail-content">${finalHtml}</div>
         </section>
         <button id="scroll-to-top-btn" title="Наверх">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
                 <path fill="none" d="M0 0h24v24H0z"/>
                 <path d="M13 7.828V20h-2V7.828l-5.364 5.364-1.414-1.414L12 4l7.778 7.778-1.414 1.414L13 7.828z"/>
             </svg>
-        </button>
-    `;
+        </button>`;
+        document.querySelectorAll('.detail-content > .content-group').forEach(el => el.classList.add('floating-item'));
+    }
 
-    document.querySelectorAll('.detail-content > .content-group').forEach(el => el.classList.add('floating-item'));
-
-    if (floatingTocWrapper && tocContentPanel && tocToggleBtn) {
-        if (tocHtmlContent) {
-            tocToggleBtn.innerHTML = `Содержание <span class="toc-arrow"></span>`;
-            tocContentPanel.innerHTML = tocHtmlContent;
-            floatingTocWrapper.style.display = 'flex';
-            initFloatingTocToggle();
+    if (tocWrapper && tocPanel && tocBtn) {
+        if (tocHtml) {
+            tocBtn.innerHTML = `${TOC_LABEL[lang] || 'Содержание'} <span class="toc-arrow"></span>`;
+            tocPanel.innerHTML = tocHtml;
+            tocWrapper.style.display = 'flex';
+            initTocToggle();
         } else {
-            floatingTocWrapper.style.display = 'none';
-            tocContentPanel.innerHTML = '';
+            tocWrapper.style.display = 'none';
         }
     }
 
-    renderRelatedPosts(collection, slug);
-    document.getElementById('site-footer').style.display = 'none';
-}
-
-// --- RELATED POSTS ---
-function renderRelatedPosts(currentCollection, currentSlug) {
-    const pool = [
-        ...( siteData.services || []).map(i => ({...i, collection: 'services'})),
-        ...( siteData.blog     || []).map(i => ({...i, collection: 'blog'})),
-        ...( siteData.creative || []).map(i => ({...i, collection: 'creative'})),
-        ...( siteData.reviews  || []).map(i => ({...i, collection: 'reviews'})),
-    ];
-    const relatedItems = pool
-        .filter(item => !(item.collection === currentCollection && item.urlSlug === currentSlug))
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 6);
-
-    if (relatedItems.length === 0) return;
-
-    const itemsHTML = relatedItems.map(item => {
-        const itemUrl = `${BASE_PATH}/${item.collection}/${item.urlSlug}/`;
-        const mediaArray = item.media || [];
-        const imageUrl = (mediaArray.find && mediaArray.find(url => !/youtube|vimeo/.test(url))) || '';
-        return `<a href="${itemUrl}" class="item-card animate-on-scroll">
-            <div class="item-card__image" role="img" aria-label="${item.mainImageAlt || item.title || ''}" data-bg-src="${imageUrl}"></div>
-            <div class="item-card__content">
-                <h3>${item.title}</h3>
-                <div class="card-subtitle">${item.subtitle || ''}</div>
-                <p>${item.description || ''}</p>
-            </div>
-        </a>`;
-    }).join('');
-
-    const relatedSection = document.createElement('section');
-    relatedSection.id = 'related-posts';
-    relatedSection.innerHTML = `<h2 class="animate-on-scroll">Вам также может быть интересно</h2><div class="item-grid">${itemsHTML}</div>`;
-    mainContentEl.appendChild(relatedSection);
-}
-
-// --- NAVIGATION MENU ---
-function renderMenu() {
-    const menuEl = document.querySelector('.nav-menu');
-    if (!menuEl) return;
-    const menuItems = [
-        { label: 'Главная',    href: `${BASE_PATH}/` },
-        { label: 'Услуги',     href: `${BASE_PATH}/#services` },
-        { label: 'Блог',       href: `${BASE_PATH}/#blog` },
-        { label: 'Творческое', href: `${BASE_PATH}/#creative` },
-        { label: 'Отзывы',     href: `${BASE_PATH}/#reviews` },
-    ];
-    menuEl.innerHTML = menuItems.map(item => `<li><a href="${item.href}">${item.label}</a></li>`).join('');
-}
-
-// --- CUSTOM BACKGROUND ---
-function applyCustomBackground(item) {
-    const iframe = document.getElementById('custom-background-iframe');
-    if (!iframe) return;
-    const homeBgHtml = (siteData.home && siteData.home.backgroundHtml) || '';
-    const itemBgHtml = (item && item.backgroundHtml) || '';
-    const customCode = itemBgHtml || homeBgHtml || '';
-    if (customCode && customCode.trim() !== "") {
-        if (iframe.srcdoc === customCode && iframe.style.display === 'block') return;
-        iframe.classList.remove('is-visible');
-        iframe.onload = () => { iframe.classList.add('is-visible'); iframe.onload = null; };
-        iframe.style.display = 'block';
-        iframe.srcdoc = customCode;
-    } else {
-        iframe.classList.remove('is-visible');
-        iframe.style.display = 'none';
-        iframe.srcdoc = '';
-    }
-}
-
-// --- HOMEPAGE HYDRATION ---
-function hydrateHomePageContent() {
-    const preData = document.getElementById('preloaded-data');
-    if (preData) {
-        try {
-            const data = JSON.parse(preData.textContent);
-            ['services', 'blog', 'creative', 'reviews'].forEach(k => {
-                if (!siteData[k] || siteData[k].length === 0) siteData[k] = data[k] || [];
-            });
-            preData.remove();
-        } catch (e) {
-            console.error("[hydrateHomePageContent] Error parsing preloaded data:", e);
-        }
-    }
-    applyCustomBackground(siteData.home);
-
-    renderSection('services', 'Услуги',     siteData.services);
-    renderSection('blog',     'Блог',        siteData.blog);
-    renderSection('creative', 'Творческое',  siteData.creative);
-    renderSection('reviews',  'Отзывы',      siteData.reviews);
-
-    document.querySelectorAll('.item-card').forEach(el => el.classList.add('animate-on-scroll'));
-
+    renderRelated(col, slug, lang);
     const footer = document.getElementById('site-footer');
-    if (footer) {
-        footer.style.display = 'block';
-        footer.innerHTML = `© ${new Date().getFullYear()} Tika — Грузинский язык`;
-        footer.onclick = () => { window.location.href = `${BASE_PATH}/admin.html`; };
+    if (footer) footer.style.display = 'none';
+}
+
+function renderRelated(col, slug, lang) {
+    const mainEl = document.querySelector('main');
+    if (!mainEl) return;
+    const pool = ['services','blog','creative','reviews'].flatMap(c => (siteData[c]||[]).map(i => ({...i,_col:c})));
+    const candidates = pool.filter(i => i.lang === lang && !(i._col === col && i.urlSlug === slug));
+    const related = candidates.sort(() => .5 - Math.random()).slice(0, 6);
+    if (!related.length) return;
+    const sec = document.createElement('section');
+    sec.id = 'related-posts';
+    sec.innerHTML = `<h2 class="animate-on-scroll">${RELATED_LABEL[lang] || ''}</h2><div class="item-grid">` +
+        related.map(item => {
+            const img = (item.media||[]).find(u => !/youtube|vimeo/.test(u)) || '';
+            return `<a href="${BASE_PATH}/${lang}/${item._col}/${item.urlSlug}/" class="item-card animate-on-scroll">
+                <div class="item-card__image" data-bg-src="${img}"></div>
+                <div class="item-card__content"><h3>${item.title||''}</h3><div class="card-subtitle">${item.subtitle||''}</div><p>${item.description||''}</p></div>
+            </a>`;
+        }).join('') + '</div>';
+    mainEl.appendChild(sec);
+}
+
+// --- ROUTING ---
+function parseRoute() {
+    // Expected: /Tika/{lang}/{col}/{slug}/ or /Tika/{lang}/
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    // parts[0] = 'Tika', parts[1] = lang, parts[2] = col, parts[3] = slug
+    const lang = SUPPORTED_LANGS.includes(parts[1]) ? parts[1] : 'ru';
+    const col = ['services','blog','creative','reviews'].includes(parts[2]) ? parts[2] : null;
+    const slug = parts[3] || null;
+    return { lang, col, slug };
+}
+
+function scrollToHash(hash) {
+    if (!hash) return;
+    const el = document.getElementById(hash.replace('#',''));
+    if (!el) return;
+    let top = 0; let e = el; while (e) { top += e.offsetTop; e = e.offsetParent; }
+    window.scrollTo({ top: Math.max(0, top - window.innerHeight * 0.25), behavior: 'smooth' });
+}
+
+async function routeAndRender() {
+    const { lang, col, slug } = parseRoute();
+    currentLang = lang;
+    renderMenu(lang);
+
+    if (col && slug) {
+        renderDetailPage(col, slug, lang);
+    } else {
+        hydrateHomePage(lang);
+        if (window.location.hash) setTimeout(() => scrollToHash(window.location.hash), 100);
     }
+
+    requestAnimationFrame(setupObservers);
+    document.documentElement.style.setProperty('--main-visibility', 'visible');
+    updateScrollBtn();
 }
 
 // --- NAVIGATION ---
-async function navigateToHome(hash = '') {
-    try {
-        const response = await fetch(`${BASE_PATH}/`);
-        if (!response.ok) throw new Error('Failed to fetch home page');
-        const htmlText = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlText, 'text/html');
-        const newMain = doc.querySelector('main');
-        if (newMain) {
-            mainContentEl.innerHTML = newMain.innerHTML;
-            document.title = doc.querySelector('title')?.textContent || 'Tika';
-        }
-        applyCustomBackground(siteData.home);
-        hydrateHomePageContent();
-        requestAnimationFrame(() => {
-            const h1 = document.querySelector('.hero h1');
-            const sub = document.querySelector('.hero-subtitle-container');
-            if (h1) h1.classList.add('is-visible');
-            if (sub) sub.classList.add('is-visible');
-        });
-        if (hash) setTimeout(() => scrollToElementWithOffset(hash.substring(1)), 100);
-    } catch (error) {
-        console.error("[navigateToHome] Error:", error);
-    } finally {
-        const toc = document.getElementById('floating-toc-wrapper');
-        if (toc) toc.style.display = 'none';
-    }
-}
-
-function scrollToElementWithOffset(elementId) {
-    const element = document.getElementById(elementId);
-    if (!element) return;
-    let absoluteTop = 0;
-    let el = element;
-    while (el) { absoluteTop += el.offsetTop; el = el.offsetParent; }
-    window.scrollTo({ top: Math.max(0, absoluteTop - Math.floor(window.innerHeight * 0.25)), behavior: 'smooth' });
-}
-
-async function routeAndRender(isPopState = false, hash = '') {
-    const path = window.location.pathname;
-    // Pattern: /Tika/collection/slug/
-    const detailPageRegex = /\/Tika\/(services|blog|creative|reviews)\/([a-zA-Z0-9-]+)\/?$/;
-    const match = path.match(detailPageRegex);
-
-    if (match) {
-        const [, col, slug] = match;
-        renderDetailPage(col, slug);
-    } else {
-        await navigateToHome(hash || window.location.hash);
-    }
-
-    requestAnimationFrame(() => setupObservers());
-    document.documentElement.style.setProperty('--main-visibility', 'visible');
-    updateScrollButtonVisibility();
-    if (!hash && !window.location.hash) window.scrollTo({ top: 0, behavior: 'instant' });
-}
-
-function handleNavigation(e) {
+function handleClick(e) {
     const link = e.target.closest('a');
-    if (!link || link.target === '_blank' || link.protocol !== window.location.protocol || link.host !== window.location.host || e.metaKey || e.ctrlKey || e.shiftKey) return;
-
-    const targetUrl = new URL(link.href);
+    if (!link || link.target === '_blank' || link.host !== location.host || e.metaKey || e.ctrlKey) return;
+    const url = new URL(link.href);
     e.preventDefault();
 
-    const menuToggle = document.querySelector('.menu-toggle');
-    const navOverlay = document.querySelector('.nav-overlay');
-    const isMenuOpen = document.body.classList.contains('nav-is-open');
-    if (isMenuOpen) {
-        document.body.classList.remove('nav-is-open');
-        if (menuToggle) menuToggle.classList.remove('is-active');
-        if (navOverlay) navOverlay.classList.remove('is-active');
-    }
-    const delay = isMenuOpen ? 350 : 0;
+    const toggleMenu = () => {
+        const isOpen = document.body.classList.contains('nav-is-open');
+        if (isOpen) {
+            document.body.classList.remove('nav-is-open');
+            document.querySelector('.menu-toggle')?.classList.remove('is-active');
+            document.querySelector('.nav-overlay')?.classList.remove('is-active');
+        }
+        return isOpen;
+    };
+    const wasOpen = toggleMenu();
+    const delay = wasOpen ? 350 : 0;
 
-    if (targetUrl.pathname === window.location.pathname && targetUrl.hash) {
-        setTimeout(() => {
-            window.history.pushState({}, '', targetUrl.href);
-            scrollToElementWithOffset(targetUrl.hash.substring(1));
-        }, delay);
+    if (url.pathname === location.pathname && url.hash) {
+        setTimeout(() => { history.pushState({}, '', url.href); scrollToHash(url.hash); }, delay);
         return;
     }
-
-    if (targetUrl.href === window.location.href) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    if (url.href === location.href) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
 
     setTimeout(() => {
-        mainContentEl.classList.add('is-transitioning');
-        setTimeout(() => {
-            window.history.pushState({}, '', targetUrl.href);
-            routeAndRender(false, targetUrl.hash);
-            requestAnimationFrame(() => requestAnimationFrame(() => mainContentEl.classList.remove('is-transitioning')));
+        const main = document.querySelector('main');
+        if (main) main.classList.add('is-transitioning');
+        setTimeout(async () => {
+            history.pushState({}, '', url.href);
+            tocInitialized = false;
+            await routeAndRender();
+            if (main) requestAnimationFrame(() => requestAnimationFrame(() => main.classList.remove('is-transitioning')));
+            if (!url.hash) window.scrollTo({ top: 0, behavior: 'instant' });
         }, 400);
     }, delay);
 }
 
-// --- STATIC PAGE HYDRATION ---
-async function hydrateStaticPage() {
-    renderMenu();
-    updateScrollButtonVisibility();
-    try {
-        siteData = await loadData();
-        const path = window.location.pathname;
-        const match = path.match(/\/Tika\/(services|blog|creative|reviews)\/([a-zA-Z0-9-]+)\/?$/);
-        if (match) {
-            const [, col, slug] = match;
-            const item = siteData[col]?.find(d => d.urlSlug === slug);
-            if (item) {
-                applyCustomBackground(item);
-                if (!document.getElementById('related-posts')) renderRelatedPosts(col, slug);
-            }
-        } else {
-            hydrateHomePageContent();
-        }
-    } catch (error) {
-        console.error("[hydrateStaticPage] Error:", error);
-    }
-}
-
-// --- EVENT LISTENERS ---
-function initStaticEventListeners() {
-    document.body.addEventListener('click', handleNavigation);
-    window.addEventListener('popstate', () => routeAndRender(true));
-
-    const menuToggle = document.querySelector('.menu-toggle');
-    const navOverlay = document.querySelector('.nav-overlay');
-
-    function closeMenu() {
-        document.body.classList.remove('nav-is-open');
-        if (menuToggle) menuToggle.classList.remove('is-active');
-        if (navOverlay) navOverlay.classList.remove('is-active');
-    }
-
-    if (menuToggle) {
-        menuToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.body.classList.toggle('nav-is-open');
-            menuToggle.classList.toggle('is-active');
-            if (navOverlay) navOverlay.classList.toggle('is-active');
-        });
-    }
-
-    document.addEventListener('click', (e) => {
-        if (!document.body.classList.contains('nav-is-open')) return;
-        if (!e.target.closest('.nav-overlay') && !e.target.closest('.menu-toggle')) closeMenu();
-    });
-
-    mainContentEl.addEventListener('click', (e) => {
-        if (e.target.closest('#scroll-to-top-btn')) window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-}
-
-// --- SCROLL HASH UPDATER ---
-let scrollHashUpdateTimer = null;
-function initScrollHashUpdater() {
-    window.addEventListener('scroll', () => {
-        if (scrollHashUpdateTimer) return;
-        scrollHashUpdateTimer = setTimeout(() => {
-            scrollHashUpdateTimer = null;
-            const headings = document.querySelectorAll('.detail-content h2[id], .detail-content h3[id]');
-            if (headings.length === 0) return;
-            let bestMatch = null;
-            const viewportMid = window.innerHeight / 2;
-            headings.forEach(h => { if (h.getBoundingClientRect().top <= viewportMid) bestMatch = h; });
-            const newHash = bestMatch ? '#' + bestMatch.id : '';
-            if (newHash !== window.location.hash) {
-                window.history.replaceState(null, '', window.location.pathname + window.location.search + newHash);
-            }
-        }, 150);
-    }, { passive: true });
-}
-
-function updateScrollButtonVisibility() {
+function updateScrollBtn() {
     const b = document.getElementById('scroll-to-top-btn');
-    if (b) { window.scrollY > 300 ? b.classList.add('visible') : b.classList.remove('visible'); }
+    if (b) b.classList.toggle('visible', window.scrollY > 300);
 }
 
-// --- APP INIT ---
+// --- INIT ---
 async function initApp() {
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
 
-    initStaticEventListeners();
-    initScrollHashUpdater();
-    window.addEventListener('scroll', updateScrollButtonVisibility, { passive: true });
+    document.body.addEventListener('click', handleClick);
+    window.addEventListener('popstate', routeAndRender);
+    window.addEventListener('scroll', updateScrollBtn, { passive: true });
 
-    if (document.body.dataset.staticPage === 'true') {
-        await hydrateStaticPage();
-        routeAndRender(false, window.location.hash);
-    } else {
-        siteData = await loadData();
-        renderMenu();
-        await routeAndRender();
-    }
+    // Mobile menu toggle
+    document.querySelector('.menu-toggle')?.addEventListener('click', e => {
+        e.stopPropagation();
+        document.body.classList.toggle('nav-is-open');
+        e.currentTarget.classList.toggle('is-active');
+        document.querySelector('.nav-overlay')?.classList.toggle('is-active');
+    });
+    document.addEventListener('click', e => {
+        if (!document.body.classList.contains('nav-is-open')) return;
+        if (!e.target.closest('.nav-overlay') && !e.target.closest('.menu-toggle')) {
+            document.body.classList.remove('nav-is-open');
+            document.querySelector('.menu-toggle')?.classList.remove('is-active');
+            document.querySelector('.nav-overlay')?.classList.remove('is-active');
+        }
+    });
+    document.querySelector('main')?.addEventListener('click', e => {
+        if (e.target.closest('#scroll-to-top-btn')) window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    siteData = await loadData();
+    await routeAndRender();
 }
 
 window.addEventListener('DOMContentLoaded', initApp);
