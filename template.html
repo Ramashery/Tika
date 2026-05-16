@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+      (function() {
+        var raw = window.location.pathname;
+        var search = window.location.search;
+        var hash = window.location.hash;
+        try {
+            var path;
+            try { path = decodeURIComponent(raw); } catch(e) { path = raw; }
+            var segments = path.split('/').filter(function(s){ return s.length > 0; });
+            if (segments.length > 0 && segments[0].toLowerCase() === 'tika') {
+                segments[0] = 'Tika';
+            }
+            for (var i = 1; i < segments.length; i++) {
+                segments[i] = segments[i].toLowerCase();
+            }
+            var clean = '/' + segments.join('/') + '/';
+            var normalized = clean + search + hash;
+            if (normalized !== raw + search + hash) {
+                window.location.replace(normalized);
+            }
+        } catch(e) {}
+      })();
+    </script>
+
+    <title>{{ item.seoTitle }}</title>
+    <meta name="description" content="{{ item.metaDescription }}">
+
+    {% set canonical_url = base_url + '/' + current_lang + '/' + item.collection_name + '/' + item.urlSlug + '/' %}
+    <link rel="canonical" href="{{ canonical_url }}" />
+
+    {% for alt in alternates %}
+    <link rel="alternate" hreflang="{{ alt.lang }}" href="{{ alt.url }}" />
+    {% endfor %}
+    {% if x_default_url %}
+    <link rel="alternate" hreflang="x-default" href="{{ x_default_url }}" />
+    {% endif %}
+
+    <meta property="og:title" content="{{ item.ogTitle or item.seoTitle }}">
+    <meta property="og:description" content="{{ item.ogDescription or item.metaDescription }}">
+    <meta property="og:image" content="{{ (item.media or ['/Tika/favicon.svg']) | first }}">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="{{ canonical_url }}">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=amaranth:400,400i,700,700i|asap-condensed:200,300i,400,400i,600,600i,700,700i,900,900i|kode-mono:400,500,600,700" rel="stylesheet" />
+    <link rel="stylesheet" href="/Tika/styles.css">
+
+    {% if item.schemaJsonLd %}
+    <script type="application/ld+json">{{ item.schemaJsonLd | tojson | safe }}</script>
+    {% endif %}
+
+    <style>:root { --main-visibility: visible !important; }</style>
+    <link rel="icon" type="image/svg+xml" href="/Tika/favicon.svg">
+</head>
+<body data-static-page="true" data-lang="{{ current_lang }}">
+
+    <script id="site-config" type="application/json">{"currentLang":"{{ current_lang }}","basePath":"/Tika","supportedLangs":["ru","ka"],"langNames":{"ru":"Русский","ka":"ქართული"}}</script>
+
+    <button class="menu-toggle" aria-label="Открыть меню">
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+    </button>
+    <div class="nav-overlay">
+        <ul class="nav-menu"></ul>
+    </div>
+
+    <div id="floating-toc-wrapper" class="floating-toc-wrapper" style="display:{% if toc_html %}flex{% else %}none{% endif %};">
+        <button id="toc-toggle-btn" class="toc-toggle-btn" aria-expanded="false" aria-controls="toc-content-panel">
+            {{ toc_title or 'Содержание' }} <span class="toc-arrow"></span>
+        </button>
+        <div id="toc-content-panel" class="toc-content-panel" aria-hidden="true">
+            {% if toc_html %}{{ toc_html | safe }}{% endif %}
+        </div>
+    </div>
+
+    <main>
+        <section>
+            <div class="detail-page-header">
+                <h1>{{ item.h1 or item.title }}</h1>
+                {% if item.price %}<div class="detail-price">{{ item.price }}</div>{% endif %}
+            </div>
+            <div class="detail-content">{{ final_content_html | safe }}</div>
+        </section>
+
+        {% if related_items %}
+        <section id="related-posts">
+            <h2>{% if current_lang == 'ka' %}ასევე შეიძლება დაინტერესდეთ{% else %}Вам также может быть интересно{% endif %}</h2>
+            <div class="item-grid">
+            {% for related in related_items %}
+                <a href="/Tika/{{ current_lang }}/{{ related.collection_name }}/{{ related.urlSlug }}/" class="item-card animate-on-scroll">
+                    <div class="item-card__image" role="img" aria-label="{{ related.mainImageAlt or related.title }}" data-bg-src="{{ (related.media or ['']) | first }}"></div>
+                    <div class="item-card__content">
+                        <h3>{{ related.title }}</h3>
+                        <div class="card-subtitle">{{ related.subtitle }}</div>
+                        <p>{{ related.description }}</p>
+                    </div>
+                </a>
+            {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <button id="scroll-to-top-btn" title="Наверх">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                <path fill="none" d="M0 0h24v24H0z"/>
+                <path d="M13 7.828V20h-2V7.828l-5.364 5.364-1.414-1.414L12 4l7.778 7.778-1.414 1.414L13 7.828z"/>
+            </svg>
+        </button>
+    </main>
+
+    <footer class="site-footer" id="site-footer"></footer>
+
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js" defer></script>
+    <script type="module" src="/Tika/main.js"></script>
+</body>
+</html>
