@@ -4,30 +4,34 @@
     <meta charset="UTF-8">
     <script>
       (function() {
-        var BASE = '/Tika';
-        var path = window.location.pathname;
+        var raw = window.location.pathname;
         var search = window.location.search;
         var hash = window.location.hash;
         try {
-            var decoded = decodeURIComponent(path);
-            // 1. Collapse duplicate slashes
-            var clean = decoded.replace(/\/{2,}/g, '/');
-            // 2. Lowercase only the part AFTER /Tika (preserve capital T for GitHub Pages)
-            var baseLower = BASE.toLowerCase();
-            if (clean.toLowerCase().startsWith(baseLower)) {
-                var rest = clean.slice(BASE.length);
-                clean = BASE + rest.toLowerCase();
-            } else {
-                clean = clean.toLowerCase().replace(/^\/tika/, BASE);
+            // 1. Decode percent-encoding
+            var path;
+            try { path = decodeURIComponent(raw); } catch(e) { path = raw; }
+
+            // 2. Split into non-empty segments — collapses ALL duplicate slashes automatically
+            var segments = path.split('/').filter(function(s){ return s.length > 0; });
+
+            // 3. Fix case: first segment must be exactly 'Tika', rest → lowercase
+            if (segments.length > 0 && segments[0].toLowerCase() === 'tika') {
+                segments[0] = 'Tika';
             }
-            // 3. Ensure trailing slash
-            if (!clean.endsWith('/')) clean += '/';
+            for (var i = 1; i < segments.length; i++) {
+                segments[i] = segments[i].toLowerCase();
+            }
+
+            // 4. Rebuild with leading and trailing slash
+            var clean = '/' + segments.join('/') + '/';
             var normalized = clean + search + hash;
-            var current = path + search + hash;
+            var current = raw + search + hash;
+
             if (normalized !== current) {
                 window.location.replace(normalized);
             }
-        } catch (e) {
+        } catch(e) {
             console.error('URL normalization failed', e);
         }
       })();
