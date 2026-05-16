@@ -5,10 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
       (function() {
-        var path = window.location.pathname;
-        if (path.length > 1 && !path.endsWith('/')) {
-            window.location.replace(path + '/' + window.location.search + window.location.hash);
-        }
+        var raw = window.location.pathname;
+        var search = window.location.search;
+        var hash = window.location.hash;
+        try {
+            var path;
+            try { path = decodeURIComponent(raw); } catch(e) { path = raw; }
+            var segments = path.split('/').filter(function(s){ return s.length > 0; });
+            if (segments.length > 0 && segments[0].toLowerCase() === 'tika') {
+                segments[0] = 'Tika';
+            }
+            for (var i = 1; i < segments.length; i++) {
+                segments[i] = segments[i].toLowerCase();
+            }
+            var clean = '/' + segments.join('/') + '/';
+            var normalized = clean + search + hash;
+            if (normalized !== raw + search + hash) {
+                window.location.replace(normalized);
+            }
+        } catch(e) {}
       })();
     </script>
 
@@ -87,21 +102,21 @@
                     </div>
                 </a>
             
-                <a href="/Tika/ka/blog/kartuli-enis-swavlis-5-mizezi/" class="item-card animate-on-scroll">
-                    <div class="item-card__image" role="img" aria-label="ქართული ენის სწავლის 5 მიზეზი" data-bg-src=""></div>
-                    <div class="item-card__content">
-                        <h3>ქართული ენის სწავლის 5 მიზეზი</h3>
-                        <div class="card-subtitle">მოტივაცია · სტატია</div>
-                        <p>ქართული — უნიკალური ენა ათასწლოვანი ისტორიით.</p>
-                    </div>
-                </a>
-            
                 <a href="/Tika/ka/services/individualuri-gakvetebi-onlayn/" class="item-card animate-on-scroll">
                     <div class="item-card__image" role="img" aria-label="ინდივიდუალური ქართული ენის გაკვეთილები" data-bg-src=""></div>
                     <div class="item-card__content">
                         <h3>ინდივიდუალური გაკვეთილები ონლაინ</h3>
                         <div class="card-subtitle">Zoom / Google Meet · 60 წთ</div>
                         <p>პერსონალური პროგრამა თქვენი დონის მიხედვით. სასაუბრო ენა, გრამატიკა.</p>
+                    </div>
+                </a>
+            
+                <a href="/Tika/ka/blog/kartuli-enis-swavlis-5-mizezi/" class="item-card animate-on-scroll">
+                    <div class="item-card__image" role="img" aria-label="ქართული ენის სწავლის 5 მიზეზი" data-bg-src=""></div>
+                    <div class="item-card__content">
+                        <h3>ქართული ენის სწავლის 5 მიზეზი</h3>
+                        <div class="card-subtitle">მოტივაცია · სტატია</div>
+                        <p>ქართული — უნიკალური ენა ათასწლოვანი ისტორიით.</p>
                     </div>
                 </a>
             
