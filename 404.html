@@ -4,14 +4,28 @@
     <meta charset="UTF-8">
     <script>
       (function() {
+        var BASE = '/Tika';
         var path = window.location.pathname;
         var search = window.location.search;
         var hash = window.location.hash;
         try {
-            var decodedPath = decodeURIComponent(path);
-                                   var cleanPath = decodedPath.replace(/\/{2,}/g, '/').toLowerCase();
-            if (path !== cleanPath) {
-                window.location.replace(cleanPath + search + hash);
+            var decoded = decodeURIComponent(path);
+            // 1. Collapse duplicate slashes
+            var clean = decoded.replace(/\/{2,}/g, '/');
+            // 2. Lowercase only the part AFTER /Tika (preserve capital T for GitHub Pages)
+            var baseLower = BASE.toLowerCase();
+            if (clean.toLowerCase().startsWith(baseLower)) {
+                var rest = clean.slice(BASE.length);
+                clean = BASE + rest.toLowerCase();
+            } else {
+                clean = clean.toLowerCase().replace(/^\/tika/, BASE);
+            }
+            // 3. Ensure trailing slash
+            if (!clean.endsWith('/')) clean += '/';
+            var normalized = clean + search + hash;
+            var current = path + search + hash;
+            if (normalized !== current) {
+                window.location.replace(normalized);
             }
         } catch (e) {
             console.error('URL normalization failed', e);
