@@ -29,7 +29,6 @@
     
 
     <style>:root { --main-visibility: visible !important; }</style>
-
     <link rel="icon" type="image/png" href="/Tika/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/Tika/favicon.svg" />
     <link rel="shortcut icon" href="/Tika/favicon.ico" />
@@ -39,7 +38,20 @@
 <body data-static-page="true" data-lang="ka">
 
     <script id="preloaded-data" type="application/json">{"blog": [], "creative": [], "reviews": [], "services": []}</script>
-    <script id="site-config" type="application/json">{"currentLang":"ka","basePath":"/Tika","supportedLangs":["ru","ka"],"langNames":{"ru":"Русский","ka":"ქართული"}}</script>
+    <script id="site-config" type="application/json">
+    {
+        "currentLang": "ka",
+        "basePath": "/Tika",
+        "supportedLangs": ["ru", "ka"],
+        "langNames": {"ru": "Русский", "ka": "ქართული"},
+        "homeData": {
+            "h1": "",
+            "h1Ka": "",
+            "subtitle": "",
+            "subtitleKa": ""
+        }
+    }
+    </script>
 
     <button class="menu-toggle" aria-label="Открыть меню">
         <span class="bar"></span><span class="bar"></span><span class="bar"></span>
@@ -50,44 +62,53 @@
 
     <div id="floating-toc-wrapper" class="floating-toc-wrapper" style="display:none;">
         <button id="toc-toggle-btn" class="toc-toggle-btn" aria-expanded="false" aria-controls="toc-content-panel">
-            სარჩევი <span class="toc-arrow"></span>
+            Содержание <span class="toc-arrow"></span>
         </button>
         <div id="toc-content-panel" class="toc-content-panel" aria-hidden="true"></div>
     </div>
 
     <main>
         <section id="hero" class="hero">
-            <div class="hero-eyebrow animate-always is-visible">TIKA · ქართული ენა</div>
-            <h1 class="animate-always is-visible"></h1>
-            <div class="hero-subtitle-container animate-always"></div>
+            <div class="hero-eyebrow animate-always is-visible" id="hero-eyebrow">TIKA · ГРУЗИНСКИЙ ЯЗЫК</div>
+            <h1 class="animate-always is-visible" id="hero-h1"></h1>
+            <div class="hero-subtitle-container animate-always" id="hero-subtitle"></div>
         </section>
 
+        
         
 
         
         <section id="services">
-            <h2 class="animate-on-scroll">სერვისები</h2>
+            <h2 class="animate-on-scroll section-title" 
+                data-label-ru="Услуги" 
+                data-label-ka="სერვისები">სერვისები</h2>
             <div class="item-grid">
             
             </div>
         </section>
         
         <section id="blog">
-            <h2 class="animate-on-scroll">ბლოგი</h2>
+            <h2 class="animate-on-scroll section-title" 
+                data-label-ru="Блог" 
+                data-label-ka="ბლოგი">ბლოგი</h2>
             <div class="item-grid">
             
             </div>
         </section>
         
         <section id="creative">
-            <h2 class="animate-on-scroll">შემოქმედება</h2>
+            <h2 class="animate-on-scroll section-title" 
+                data-label-ru="Творческое" 
+                data-label-ka="შემოქმედება">შემოქმედება</h2>
             <div class="item-grid">
             
             </div>
         </section>
         
         <section id="reviews">
-            <h2 class="animate-on-scroll">გამოხმაურებები</h2>
+            <h2 class="animate-on-scroll section-title" 
+                data-label-ru="Отзывы" 
+                data-label-ka="გამოხმაურებები">გამოხმაურებები</h2>
             <div class="item-grid">
             
             </div>

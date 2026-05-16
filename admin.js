@@ -12,14 +12,14 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-// --- CONFIG ---
 const SUPPORTED_LANGS = ['ru', 'ka'];
 const LANG_NAMES = { ru: 'Русский', ka: 'ქართული' };
 const COLLECTIONS = ['services', 'blog', 'creative', 'reviews'];
 const COLLECTION_LABELS = { services: 'Услуги', blog: 'Блог', creative: 'Творческое', reviews: 'Отзывы' };
+const defaultLang = 'ru';
 let siteData = {};
 
-// --- DATA LOADING ---
+// --- DATA ---
 async function loadData() {
     try {
         const [homeDoc, ...snaps] = await Promise.all([
@@ -35,57 +35,73 @@ async function loadData() {
             data[col] = snaps[i].docs.map(doc => ({ id: doc.id, ...proc(doc.data()) }));
         });
         return data;
-    } catch (e) {
+    } catch(e) {
         console.error('loadData error:', e);
         alert('Ошибка загрузки: ' + e.message);
         return {};
     }
 }
 
-// --- RENDER ADMIN PANEL ---
+// --- RENDER ---
 function renderAdminPanel() {
     renderAdminHome();
     COLLECTIONS.forEach(col => renderAdminSection(col));
 }
 
-// --- HOME FORM ---
+// --- HOME ---
 function renderAdminHome() {
     const container = document.querySelector('[data-tab-content="home"]');
     if (!container) return;
     const d = siteData.home || {};
+    const dateValue = d.lastModified ? d.lastModified.substring(0,10) : '';
+
     container.innerHTML = `
-        <h2>Главная страница</h2>
-        <div class="admin-form">
+    <div class="admin-section-header"><h2>Главная страница</h2></div>
+    <div class="admin-item" id="admin-home-item">
+        <div class="admin-item-content">
+            <h4>Контент Hero (RU)</h4>
             <label>H1 заголовок (RU)</label>
-            <input type="text" id="home-h1" value="${esc(d.h1 || '')}" placeholder="Заголовок на русском">
-            <label>H1 заголовок (KA)</label>
-            <input type="text" id="home-h1-ka" value="${esc(d.h1Ka || '')}" placeholder="სათაური ქართულად">
+            <input type="text" id="home-h1" value="${esc(d.h1||'')}" disabled>
             <label>Подзаголовок (RU, HTML)</label>
-            <textarea id="home-subtitle" rows="4">${esc(d.subtitle || '')}</textarea>
+            <textarea id="home-subtitle" rows="3" disabled>${esc(d.subtitle||'')}</textarea>
+
+            <h4>Контент Hero (KA)</h4>
+            <label>H1 заголовок (KA)</label>
+            <input type="text" id="home-h1-ka" value="${esc(d.h1Ka||'')}" disabled>
             <label>Подзаголовок (KA, HTML)</label>
-            <textarea id="home-subtitle-ka" rows="4">${esc(d.subtitleKa || '')}</textarea>
+            <textarea id="home-subtitle-ka" rows="3" disabled>${esc(d.subtitleKa||'')}</textarea>
+
+            <h4>SEO</h4>
             <label>SEO Title (RU)</label>
-            <input type="text" id="home-seoTitle" value="${esc(d.seoTitle || '')}">
+            <input type="text" id="home-seoTitle" value="${esc(d.seoTitle||'')}" disabled>
             <label>SEO Title (KA)</label>
-            <input type="text" id="home-seoTitle-ka" value="${esc(d.seoTitleKa || '')}">
+            <input type="text" id="home-seoTitle-ka" value="${esc(d.seoTitleKa||'')}" disabled>
             <label>Meta Description (RU)</label>
-            <textarea id="home-metaDescription" rows="3">${esc(d.metaDescription || '')}</textarea>
+            <textarea id="home-metaDescription" rows="3" disabled>${esc(d.metaDescription||'')}</textarea>
             <label>Meta Description (KA)</label>
-            <textarea id="home-metaDescription-ka" rows="3">${esc(d.metaDescriptionKa || '')}</textarea>
-            <label>OG Title (RU)</label>
-            <input type="text" id="home-ogTitle" value="${esc(d.ogTitle || '')}">
-            <label>OG Description (RU)</label>
-            <textarea id="home-ogDescription" rows="2">${esc(d.ogDescription || '')}</textarea>
-            <label>OG Image URL</label>
-            <input type="text" id="home-ogImage" value="${esc(d.ogImage || '')}" placeholder="https://...">
-            <label>Фоновый HTML</label>
-            <textarea id="home-backgroundHtml" rows="5">${esc(d.backgroundHtml || '')}</textarea>
+            <textarea id="home-metaDescription-ka" rows="3" disabled>${esc(d.metaDescriptionKa||'')}</textarea>
+
+            <h4>Open Graph</h4>
+            <label>OG Title</label>
+            <input type="text" id="home-ogTitle" value="${esc(d.ogTitle||'')}" disabled>
+            <label>OG Description</label>
+            <textarea id="home-ogDescription" rows="2" disabled>${esc(d.ogDescription||'')}</textarea>
+            <label>OG Image URL (1200×630)</label>
+            <input type="text" id="home-ogImage" value="${esc(d.ogImage||'')}" disabled>
+
+            <h4>Прочее</h4>
+            <label>Фоновый HTML / JS / CSS</label>
+            <textarea id="home-backgroundHtml" rows="8" disabled>${esc(d.backgroundHtml||'')}</textarea>
             <label>Schema JSON-LD</label>
-            <textarea id="home-schemaJsonLd" rows="6">${typeof d.schemaJsonLd === 'object' ? JSON.stringify(d.schemaJsonLd, null, 2) : esc(d.schemaJsonLd || '')}</textarea>
-            <button onclick="saveHome()">Сохранить главную страницу</button>
-            <p id="home-save-status" style="color:var(--color-accent);min-height:1.2em"></p>
+            <textarea id="home-schemaJsonLd" rows="8" disabled>${typeof d.schemaJsonLd==='object'?JSON.stringify(d.schemaJsonLd,null,2):esc(d.schemaJsonLd||'{}')}</textarea>
+            <label>Last Modified</label>
+            <input type="date" id="home-lastModified" value="${dateValue}" disabled>
         </div>
-    `;
+        <div class="admin-item-actions">
+            <button class="admin-btn edit-btn" data-action="edit-home">Edit</button>
+            <button class="admin-btn save-btn" data-action="save-home">Save</button>
+        </div>
+    </div>`;
 }
 
 async function saveHome() {
@@ -94,232 +110,272 @@ async function saveHome() {
         subtitle: val('home-subtitle'), subtitleKa: val('home-subtitle-ka'),
         seoTitle: val('home-seoTitle'), seoTitleKa: val('home-seoTitle-ka'),
         metaDescription: val('home-metaDescription'), metaDescriptionKa: val('home-metaDescription-ka'),
-        ogTitle: val('home-ogTitle'), ogDescription: val('home-ogDescription'),
-        ogImage: val('home-ogImage'), backgroundHtml: val('home-backgroundHtml'),
-        lang: 'ru', lastModified: new Date().toISOString(),
+        ogTitle: val('home-ogTitle'), ogDescription: val('home-ogDescription'), ogImage: val('home-ogImage'),
+        backgroundHtml: val('home-backgroundHtml'),
+        lastModified: val('home-lastModified') || new Date().toISOString(),
+        lang: 'ru',
     };
     const schema = val('home-schemaJsonLd').trim();
-    if (schema) { try { data.schemaJsonLd = JSON.parse(schema); } catch { data.schemaJsonLd = schema; } }
-    else { data.schemaJsonLd = {}; }
-
+    data.schemaJsonLd = schema ? (()=>{ try{return JSON.parse(schema);}catch{return schema;} })() : {};
     try {
-        await db.collection('home').doc('content').set(data, { merge: true });
-        siteData.home = { ...siteData.home, ...data };
-        showStatus('home-save-status', '✓ Сохранено');
-    } catch (e) {
-        showStatus('home-save-status', `✗ ${e.message}`, true);
-    }
+        await db.collection('home').doc('content').set(data, {merge:true});
+        siteData.home = {...siteData.home,...data};
+        alert('✓ Главная сохранена');
+        renderAdminHome();
+    } catch(e) { alert('✗ ' + e.message); }
 }
 
-// --- SECTION RENDERING ---
+// --- SECTION (like original - list + editor) ---
 function renderAdminSection(key) {
     const container = document.querySelector(`[data-tab-content="${key}"]`);
     if (!container) return;
-    const items = siteData[key] || [];
     const label = COLLECTION_LABELS[key] || key;
+    const items = siteData[key] || [];
 
-    // Группируем по языкам
-    const byLang = {};
-    SUPPORTED_LANGS.forEach(l => byLang[l] = []);
+    const groupedItems = {};
     items.forEach(item => {
-        const l = item.lang || 'ru';
-        if (byLang[l]) byLang[l].push(item);
-        else byLang['ru'].push(item);
+        const lang = item.lang || defaultLang;
+        if (!groupedItems[lang]) groupedItems[lang] = [];
+        groupedItems[lang].push(item);
     });
 
-    const langGroupsHTML = SUPPORTED_LANGS.map(lang => {
-        const langItems = byLang[lang];
-        const itemsHTML = langItems.length
-            ? langItems.map(item => renderItemCard(item, key)).join('')
-            : `<p style="opacity:0.5;font-size:0.9rem">Нет записей на ${LANG_NAMES[lang]}</p>`;
-        return `
-            <div class="admin-lang-group">
-                <h4>${LANG_NAMES[lang]} (${lang})</h4>
-                <div class="admin-items-list" id="list-${key}-${lang}">${itemsHTML}</div>
-            </div>`;
+    const listsHTML = SUPPORTED_LANGS.map(lang => {
+        const langItems = groupedItems[lang] || [];
+        if (!langItems.length) return `<div class="admin-lang-group"><h4>${LANG_NAMES[lang]} (${lang})</h4><p style="opacity:0.5;font-size:0.85rem;padding:8px 0">Нет записей</p></div>`;
+        const itemsHTML = langItems
+            .sort((a,b) => (a.title||'').localeCompare(b.title||''))
+            .map(item => `<li class="admin-list-item ${item.status==='archived'?'is-archived':''}" 
+                data-id="${item.id}" data-key="${key}" data-status="${item.status||'published'}">
+                ${esc(item.title||'No Title')}
+                <span class="admin-list-item-slug">(/${item.urlSlug||'no-slug'})</span>
+            </li>`).join('');
+        return `<div class="admin-lang-group"><h4>${LANG_NAMES[lang]} (${lang})</h4><ul class="admin-item-list">${itemsHTML}</ul></div>`;
     }).join('');
 
     container.innerHTML = `
-        <h2>${label}</h2>
-        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-            ${SUPPORTED_LANGS.map(l => `<button class="btn-add" onclick="addItem('${key}','${l}')">+ Добавить (${l.toUpperCase()})</button>`).join('')}
+        <div class="admin-section-header">
+            <h2>Управление: ${label}</h2>
+            <button class="admin-btn" data-action="add" data-key="${key}">+ Добавить</button>
         </div>
-        ${langGroupsHTML}
+        ${listsHTML}
+        <div class="admin-item-editor-container"></div>
     `;
 }
 
-function renderItemCard(item, collection) {
-    const statusBadge = item.status === 'archived' ? '<span style="color:#f0ad4e;font-size:11px"> [архив]</span>' : '';
-    const statusDraft = item.status === 'draft' ? '<span style="color:#aaa;font-size:11px"> [черновик]</span>' : '';
-    return `
-        <div class="admin-item-card" id="item-card-${collection}-${item.id}">
-            <div class="admin-item-header" onclick="toggleCard('${collection}','${item.id}')">
-                <strong>${esc(item.title || '(без названия)')}</strong>${statusBadge}${statusDraft}
-                <span class="admin-item-toggle">▼</span>
-            </div>
-            <div class="admin-item-body" id="item-body-${collection}-${item.id}" style="display:none">
-                ${renderItemForm(item, collection)}
-                <div class="admin-item-actions">
-                    <button onclick="saveItem('${collection}','${item.id}')">Сохранить</button>
-                    <button class="btn-danger" onclick="deleteItem('${collection}','${item.id}')">Удалить</button>
-                </div>
-                <p id="status-${collection}-${item.id}" class="save-status"></p>
-            </div>
-        </div>
-    `;
-}
-
-function renderItemForm(item, collection) {
+// --- ITEM FORM (full, like original) ---
+function generateItemFormHTML(item, key) {
+    const isArchived = item.status === 'archived';
+    const archiveBtnText = isArchived ? 'Опубликовать' : 'В архив';
     const langOptions = SUPPORTED_LANGS.map(l =>
-        `<option value="${l}" ${item.lang === l ? 'selected' : ''}>${LANG_NAMES[l]} (${l})</option>`
+        `<option value="${l}" ${item.lang===l?'selected':''}>${LANG_NAMES[l]} (${l})</option>`
     ).join('');
 
-    return `
-        <label>Язык</label>
-        <select data-field="lang">${langOptions}</select>
+    const dateValue = (item.lastModified||'').substring(0,10);
 
-        <label>Заголовок (title)</label>
-        <input type="text" data-field="title" value="${esc(item.title || '')}">
+    return `<div class="admin-item" data-id="${item.id}" data-key="${key}" data-status="${item.status||'published'}">
+        <div class="admin-item-content">
+            <h4>Контент карточки (на главной)</h4>
+            <label>Заголовок карточки (Title)</label>
+            <input type="text" class="admin-input-title" value="${esc(item.title||'')}" disabled>
+            <label>Подзаголовок / Дата</label>
+            <input type="text" class="admin-input-subtitle" value="${esc(item.subtitle||'')}" disabled>
+            <label>Описание карточки</label>
+            <textarea class="admin-input-description" rows="3" disabled>${esc(item.description||'')}</textarea>
 
-        <label>H1 (если отличается)</label>
-        <input type="text" data-field="h1" value="${esc(item.h1 || '')}">
+            <h4>Детальная страница</h4>
+            <label>Язык</label>
+            <select class="admin-input-lang" disabled>${langOptions}</select>
+            <label>URL Slug (латиница, без пробелов)</label>
+            <input type="text" class="admin-input-urlSlug" value="${esc(item.urlSlug||'')}" disabled>
+            <label>H1 заголовок страницы</label>
+            <input type="text" class="admin-input-h1" value="${esc(item.h1||'')}" disabled>
+            <label>Цена / Бюджет</label>
+            <input type="text" class="admin-input-price" value="${esc(item.price||'')}" disabled>
+            <label>Основной контент (HTML / текст)</label>
+            <textarea class="admin-input-mainContent" rows="10" disabled>${esc(item.mainContent||'')}</textarea>
+            <label>Media (URLs, по одному на строку)</label>
+            <textarea class="admin-input-media" rows="4" disabled>${esc((item.media||[]).join('\n'))}</textarea>
+            <label>Alt текст главного изображения</label>
+            <input type="text" class="admin-input-mainImageAlt" value="${esc(item.mainImageAlt||'')}" disabled>
 
-        <label>Подзаголовок (subtitle)</label>
-        <input type="text" data-field="subtitle" value="${esc(item.subtitle || '')}">
+            <h4>SEO & Метаданные</h4>
+            <label>SEO Title</label>
+            <input type="text" class="admin-input-seoTitle" value="${esc(item.seoTitle||'')}" disabled>
+            <label>Meta Description</label>
+            <textarea class="admin-input-metaDescription" rows="3" disabled>${esc(item.metaDescription||'')}</textarea>
 
-        <label>Краткое описание (для карточки)</label>
-        <textarea data-field="description" rows="3">${esc(item.description || '')}</textarea>
+            <h4>Sitemap & Переводы</h4>
+            <label>Translation Group Key (одинаковый для RU и KA версий одной страницы)</label>
+            <input type="text" class="admin-input-translationGroupKey" value="${esc(item.translationGroupKey||'')}" placeholder="unique-key" disabled>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:5px;padding:10px;background:rgba(255,255,255,0.05);border-radius:4px">
+                <input type="checkbox" class="admin-input-isXDefault" id="xdefault-${item.id}" ${item.isXDefault||item.lang==='ru'?'checked':''} style="width:auto" disabled>
+                <label for="xdefault-${item.id}" style="margin-bottom:0;cursor:pointer">
+                    x-default (главная версия для SEO)<br>
+                    <small style="opacity:0.7">Автоматически для RU, вручную для других</small>
+                </label>
+            </div>
+            <label>Last Modified</label>
+            <input type="date" class="admin-input-lastModified" value="${dateValue}" disabled>
+            <label>Priority (0.1–1.0)</label>
+            <input type="number" step="0.1" class="admin-input-sitemapPriority" value="${item.sitemapPriority||'0.7'}" disabled>
+            <label>Change Frequency</label>
+            <select class="admin-input-sitemapChangefreq" disabled>
+                <option value="monthly" ${!item.sitemapChangefreq||item.sitemapChangefreq==='monthly'?'selected':''}>monthly</option>
+                <option value="weekly" ${item.sitemapChangefreq==='weekly'?'selected':''}>weekly</option>
+                <option value="yearly" ${item.sitemapChangefreq==='yearly'?'selected':''}>yearly</option>
+            </select>
+            <label>Schema JSON-LD</label>
+            <textarea class="admin-input-schemaJsonLd" rows="5" disabled>${typeof item.schemaJsonLd==='object'?JSON.stringify(item.schemaJsonLd,null,2):esc(item.schemaJsonLd||'{}')}</textarea>
 
-        <label>Основной контент (mainContent)</label>
-        <textarea data-field="mainContent" rows="12">${esc(item.mainContent || '')}</textarea>
-
-        <label>URL Slug (латиница)</label>
-        <input type="text" data-field="urlSlug" value="${esc(item.urlSlug || '')}">
-
-        <label>Translation Group Key (одинаковый для RU+KA переводов)</label>
-        <input type="text" data-field="translationGroupKey" value="${esc(item.translationGroupKey || '')}" placeholder="уникальный-ключ">
-
-        <label>Цена</label>
-        <input type="text" data-field="price" value="${esc(item.price || '')}" placeholder="2000 ₽/месяц">
-
-        <label>Media (URLs, по одному на строку)</label>
-        <textarea data-field="media" rows="3">${esc((item.media || []).join('\n'))}</textarea>
-
-        <label>Alt текст главного изображения</label>
-        <input type="text" data-field="mainImageAlt" value="${esc(item.mainImageAlt || '')}">
-
-        <label>SEO Title</label>
-        <input type="text" data-field="seoTitle" value="${esc(item.seoTitle || '')}">
-
-        <label>Meta Description</label>
-        <textarea data-field="metaDescription" rows="3">${esc(item.metaDescription || '')}</textarea>
-
-        <label>OG Title</label>
-        <input type="text" data-field="ogTitle" value="${esc(item.ogTitle || '')}">
-
-        <label>OG Description</label>
-        <textarea data-field="ogDescription" rows="2">${esc(item.ogDescription || '')}</textarea>
-
-        <label>Schema JSON-LD</label>
-        <textarea data-field="schemaJsonLd" rows="4">${typeof item.schemaJsonLd === 'object' ? JSON.stringify(item.schemaJsonLd, null, 2) : esc(item.schemaJsonLd || '')}</textarea>
-
-        <label>Sitemap Priority (0.1–1.0)</label>
-        <input type="number" step="0.1" min="0.1" max="1.0" data-field="sitemapPriority" value="${item.sitemapPriority || '0.7'}">
-
-        <label>Sitemap Changefreq</label>
-        <select data-field="sitemapChangefreq">
-            <option value="monthly" ${(!item.sitemapChangefreq || item.sitemapChangefreq==='monthly')?'selected':''}>monthly</option>
-            <option value="weekly" ${item.sitemapChangefreq==='weekly'?'selected':''}>weekly</option>
-            <option value="yearly" ${item.sitemapChangefreq==='yearly'?'selected':''}>yearly</option>
-        </select>
-
-        <label>Статус</label>
-        <select data-field="status">
-            <option value="published" ${(!item.status||item.status==='published')?'selected':''}>Опубликовано</option>
-            <option value="draft" ${item.status==='draft'?'selected':''}>Черновик</option>
-            <option value="archived" ${item.status==='archived'?'selected':''}>Архив</option>
-        </select>
-    `;
+            <h4>Social Media (OG)</h4>
+            <label>OG Title</label>
+            <input type="text" class="admin-input-ogTitle" value="${esc(item.ogTitle||'')}" disabled>
+            <label>OG Description</label>
+            <textarea class="admin-input-ogDescription" rows="2" disabled>${esc(item.ogDescription||'')}</textarea>
+            <label>OG Image URL</label>
+            <input type="text" class="admin-input-ogImage" value="${esc(item.ogImage||'')}" disabled>
+            <label>Custom Background HTML</label>
+            <textarea class="admin-input-backgroundHtml" rows="6" disabled>${esc(item.backgroundHtml||'')}</textarea>
+        </div>
+        <div class="admin-item-actions">
+            <button class="admin-btn edit-btn" data-action="edit">Edit</button>
+            <button class="admin-btn save-btn" data-action="save">Save</button>
+            <button class="admin-btn archive-btn" data-action="archive">${archiveBtnText}</button>
+            <button class="admin-btn delete-btn" data-action="delete">Удалить навсегда</button>
+        </div>
+    </div>`;
 }
 
-function toggleCard(collection, id) {
-    const body = document.getElementById(`item-body-${collection}-${id}`);
-    if (body) body.style.display = body.style.display === 'none' ? 'block' : 'none';
-}
+// --- EVENTS ---
+document.addEventListener('click', async e => {
+    // Home edit/save
+    if (e.target.dataset.action === 'edit-home') {
+        document.getElementById('admin-home-item')?.querySelectorAll('[disabled]').forEach(el => el.removeAttribute('disabled'));
+        e.target.style.display = 'none';
+        return;
+    }
+    if (e.target.dataset.action === 'save-home') { await saveHome(); return; }
 
-async function saveItem(collection, id) {
-    const card = document.getElementById(`item-card-${collection}-${id}`);
-    const statusEl = document.getElementById(`status-${collection}-${id}`);
-    if (!card || !statusEl) return;
+    // Add new item
+    if (e.target.dataset.action === 'add') {
+        const key = e.target.dataset.key;
+        const lang = prompt('Язык (ru / ka):', 'ru') || 'ru';
+        const newItem = {
+            title:'Новая запись', h1:'', subtitle:'', description:'', mainContent:'',
+            urlSlug:`novaya-${Date.now()}`, lang: SUPPORTED_LANGS.includes(lang)?lang:'ru',
+            status:'draft', media:[], seoTitle:'', metaDescription:'',
+            translationGroupKey:'', isXDefault: lang==='ru',
+            sitemapPriority:0.7, sitemapChangefreq:'monthly',
+            ogTitle:'', ogDescription:'', ogImage:'', backgroundHtml:'',
+            schemaJsonLd:{}, lastModified: new Date().toISOString(),
+        };
+        try {
+            const ref = await db.collection(key).add(newItem);
+            newItem.id = ref.id;
+            if (!siteData[key]) siteData[key] = [];
+            siteData[key].unshift(newItem);
+            renderAdminSection(key);
+            // Show editor
+            const container = document.querySelector(`[data-tab-content="${key}"]`);
+            const editorContainer = container?.querySelector('.admin-item-editor-container');
+            if (editorContainer) {
+                editorContainer.innerHTML = generateItemFormHTML(newItem, key);
+                editorContainer.querySelectorAll('[disabled]').forEach(el => el.removeAttribute('disabled'));
+                editorContainer.scrollIntoView({behavior:'smooth'});
+            }
+        } catch(err) { alert('Ошибка: ' + err.message); }
+        return;
+    }
 
-    const data = { lastModified: new Date().toISOString() };
-    card.querySelectorAll('[data-field]').forEach(el => {
-        const field = el.dataset.field;
-        if (field === 'media') {
-            data[field] = el.value.split('\n').map(s => s.trim()).filter(Boolean);
-        } else if (field === 'schemaJsonLd') {
-            const raw = el.value.trim();
-            if (raw) { try { data[field] = JSON.parse(raw); } catch { data[field] = raw; } }
-            else { data[field] = {}; }
-        } else if (field === 'sitemapPriority') {
-            data[field] = parseFloat(el.value) || 0.7;
-        } else {
-            data[field] = el.value;
+    // List item click → open editor
+    if (e.target.closest('.admin-list-item')) {
+        const li = e.target.closest('.admin-list-item');
+        const id = li.dataset.id;
+        const key = li.dataset.key;
+        const item = (siteData[key]||[]).find(i => i.id === id);
+        if (!item) return;
+        const container = document.querySelector(`[data-tab-content="${key}"]`);
+        const editorContainer = container?.querySelector('.admin-item-editor-container');
+        if (editorContainer) {
+            editorContainer.innerHTML = generateItemFormHTML(item, key);
+            editorContainer.scrollIntoView({behavior:'smooth'});
         }
-    });
-
-    try {
-        await db.collection(collection).doc(id).set(data, { merge: true });
-        const idx = (siteData[collection] || []).findIndex(i => i.id === id);
-        if (idx > -1) siteData[collection][idx] = { ...siteData[collection][idx], ...data };
-        showStatus(`status-${collection}-${id}`, '✓ Сохранено');
-        // Обновляем секцию чтобы перегруппировать по языку если изменился
-        renderAdminSection(collection);
-    } catch (e) {
-        showStatus(`status-${collection}-${id}`, `✗ ${e.message}`, true);
+        return;
     }
-}
 
-async function deleteItem(collection, id) {
-    if (!confirm('Удалить запись навсегда?')) return;
-    try {
-        await db.collection(collection).doc(id).delete();
-        siteData[collection] = (siteData[collection] || []).filter(i => i.id !== id);
-        renderAdminSection(collection);
-    } catch (e) {
-        alert('Ошибка: ' + e.message);
+    // Edit
+    if (e.target.dataset.action === 'edit') {
+        const adminItem = e.target.closest('.admin-item');
+        adminItem?.querySelectorAll('[disabled]').forEach(el => el.removeAttribute('disabled'));
+        e.target.style.display = 'none';
+        return;
     }
-}
 
-async function addItem(collection, lang) {
-    const newItem = {
-        title: 'Новая запись',
-        h1: '', subtitle: '', description: '', mainContent: '',
-        urlSlug: `novaya-${Date.now()}`,
-        lang: lang, status: 'draft',
-        media: [], seoTitle: '', metaDescription: '',
-        translationGroupKey: '',
-        sitemapPriority: 0.7, sitemapChangefreq: 'monthly',
-        lastModified: new Date().toISOString(),
-    };
-    try {
-        const ref = await db.collection(collection).add(newItem);
-        newItem.id = ref.id;
-        if (!siteData[collection]) siteData[collection] = [];
-        siteData[collection].unshift(newItem);
-        renderAdminSection(collection);
-        setTimeout(() => toggleCard(collection, newItem.id), 100);
-    } catch (e) {
-        alert('Ошибка: ' + e.message);
+    // Save
+    if (e.target.dataset.action === 'save') {
+        const adminItem = e.target.closest('.admin-item');
+        if (!adminItem) return;
+        const id = adminItem.dataset.id;
+        const key = adminItem.dataset.key;
+        const data = {lastModified: new Date().toISOString()};
+        adminItem.querySelectorAll('[class^="admin-input-"]').forEach(el => {
+            const cls = [...el.classList].find(c => c.startsWith('admin-input-'));
+            if (!cls) return;
+            const field = cls.replace('admin-input-','');
+            if (field === 'media') data[field] = el.value.split('\n').map(s=>s.trim()).filter(Boolean);
+            else if (field === 'schemaJsonLd') { const r=el.value.trim(); data[field]=r?(()=>{try{return JSON.parse(r);}catch{return r;}})():{};  }
+            else if (field === 'isXDefault') data[field] = el.checked;
+            else if (field === 'sitemapPriority') data[field] = parseFloat(el.value)||0.7;
+            else data[field] = el.value;
+        });
+        try {
+            await db.collection(key).doc(id).set(data, {merge:true});
+            const idx = (siteData[key]||[]).findIndex(i=>i.id===id);
+            if (idx>-1) siteData[key][idx] = {...siteData[key][idx],...data};
+            renderAdminSection(key);
+            alert('✓ Сохранено');
+        } catch(err) { alert('✗ ' + err.message); }
+        return;
     }
-}
+
+    // Archive
+    if (e.target.dataset.action === 'archive') {
+        const adminItem = e.target.closest('.admin-item');
+        if (!adminItem) return;
+        const id = adminItem.dataset.id; const key = adminItem.dataset.key;
+        const item = (siteData[key]||[]).find(i=>i.id===id);
+        if (!item) return;
+        const newStatus = item.status==='archived' ? 'published' : 'archived';
+        try {
+            await db.collection(key).doc(id).update({status: newStatus});
+            item.status = newStatus;
+            renderAdminSection(key);
+        } catch(err) { alert('✗ ' + err.message); }
+        return;
+    }
+
+    // Delete
+    if (e.target.dataset.action === 'delete') {
+        const adminItem = e.target.closest('.admin-item');
+        if (!adminItem) return;
+        const id = adminItem.dataset.id; const key = adminItem.dataset.key;
+        if (!confirm('Удалить навсегда?')) return;
+        try {
+            await db.collection(key).doc(id).delete();
+            siteData[key] = (siteData[key]||[]).filter(i=>i.id!==id);
+            adminItem.closest('.admin-item-editor-container').innerHTML = '';
+            renderAdminSection(key);
+        } catch(err) { alert('✗ ' + err.message); }
+        return;
+    }
+});
 
 // --- TABS ---
 function initTabs() {
     document.querySelectorAll('.admin-tab').forEach(tab => {
         tab.addEventListener('click', () => {
-            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
             tab.classList.add('active');
             document.querySelector(`[data-tab-content="${tab.dataset.tab}"]`)?.classList.add('active');
         });
@@ -347,11 +403,11 @@ function initAuth() {
     document.getElementById('login-form').addEventListener('submit', async e => {
         e.preventDefault();
         const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
+        const pass = document.getElementById('login-password').value;
         try {
-            await auth.signInWithEmailAndPassword(email, password);
-        } catch (err) {
-            document.getElementById('login-error').textContent = 'Ошибка: ' + err.message;
+            await auth.signInWithEmailAndPassword(email, pass);
+        } catch(err) {
+            document.getElementById('login-error').textContent = 'Ошибка входа: ' + err.message;
         }
     });
 
@@ -359,17 +415,7 @@ function initAuth() {
 }
 
 // --- HELPERS ---
-function esc(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function val(id) { return document.getElementById(id)?.value || ''; }
-function showStatus(id, msg, isError = false) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = msg;
-    el.style.color = isError ? '#ff6b6b' : 'var(--color-accent)';
-    setTimeout(() => { el.textContent = ''; }, 3000);
-}
+function esc(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function val(id) { return document.getElementById(id)?.value||''; }
 
-// --- INIT ---
 initAuth();
