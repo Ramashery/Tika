@@ -1,0 +1,102 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://ramashery.github.io/Tika/ru/</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ramashery.github.io/Tika/ru/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ramashery.github.io/Tika/ru/"/>
+    <xhtml:link rel="alternate" hreflang="ka" href="https://ramashery.github.io/Tika/ka/"/>
+  </url>
+  <url>
+    <loc>https://ramashery.github.io/Tika/ka/services/oflayn-gakvetebi-tbilisi/</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ramashery.github.io/Tika/ru/services/oflayn-uroki-tbilisi/"/>
+    <xhtml:link rel="alternate" hreflang="ka" href="https://ramashery.github.io/Tika/ka/services/oflayn-gakvetebi-tbilisi/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ramashery.github.io/Tika/ru/services/oflayn-uroki-tbilisi/"/>
+  </url>
+  <url>
+    <loc>https://ramashery.github.io/Tika/ru/services/oflayn-uroki-tbilisi/</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ramashery.github.io/Tika/ru/services/oflayn-uroki-tbilisi/"/>
+    <xhtml:link rel="alternate" hreflang="ka" href="https://ramashery.github.io/Tika/ka/services/oflayn-gakvetebi-tbilisi/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ramashery.github.io/Tika/ru/services/oflayn-uroki-tbilisi/"/>
+  </url>
+  <url>
+    <loc>https://ramashery.github.io/Tika/ka/services/individualuri-gakvetebi-onlayn/</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ramashery.github.io/Tika/ru/services/individualnye-uroki-onlayn/"/>
+    <xhtml:link rel="alternate" hreflang="ka" href="https://ramashery.github.io/Tika/ka/services/individualuri-gakvetebi-onlayn/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ramashery.github.io/Tika/ru/services/individualnye-uroki-onlayn/"/>
+  </url>
+  <url>
+    <loc>https://ramashery.github.io/Tika/ru/services/individualnye-uroki-onlayn/</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ramashery.github.io/Tika/ru/services/individualnye-uroki-onlayn/"/>
+    <xhtml:link rel="alternate" hreflang="ka" href="https://ramashery.github.io/Tika/ka/services/individualuri-gakvetebi-onlayn/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ramashery.github.io/Tika/ru/services/individualnye-uroki-onlayn/"/>
+  </url>
+  <url>
+    <loc>https://ramashery.github.io/Tika/ka/blog/kartuli-enis-swavlis-5-mizezi/</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ramashery.github.io/Tika/ru/blog/5-prichin-uchit-gruzinskiy/"/>
+    <xhtml:link rel="alternate" hreflang="ka" href="https://ramashery.github.io/Tika/ka/blog/kartuli-enis-swavlis-5-mizezi/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ramashery.github.io/Tika/ru/blog/5-prichin-uchit-gruzinskiy/"/>
+  </url>
+  <url>
+    <loc>https://ramashery.github.io/Tika/ru/blog/5-prichin-uchit-gruzinskiy/</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ramashery.github.io/Tika/ru/blog/5-prichin-uchit-gruzinskiy/"/>
+    <xhtml:link rel="alternate" hreflang="ka" href="https://ramashery.github.io/Tika/ka/blog/kartuli-enis-swavlis-5-mizezi/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ramashery.github.io/Tika/ru/blog/5-prichin-uchit-gruzinskiy/"/>
+  </url>
+  <url>
+    <loc>https://ramashery.github.io/Tika/ru/creative/gruzinskaya-poeziya/</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ramashery.github.io/Tika/ru/creative/gruzinskaya-poeziya/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ramashery.github.io/Tika/ru/creative/gruzinskaya-poeziya/"/>
+    <xhtml:link rel="alternate" hreflang="ka" href="https://ramashery.github.io/Tika/ka/creative/kartuli-poezia/"/>
+  </url>
+  <url>
+    <loc>https://ramashery.github.io/Tika/ka/creative/kartuli-poezia/</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ramashery.github.io/Tika/ru/creative/gruzinskaya-poeziya/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ramashery.github.io/Tika/ru/creative/gruzinskaya-poeziya/"/>
+    <xhtml:link rel="alternate" hreflang="ka" href="https://ramashery.github.io/Tika/ka/creative/kartuli-poezia/"/>
+  </url>
+  <url>
+    <loc>https://ramashery.github.io/Tika/ru/reviews/otzyv-anna-moskva/</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ramashery.github.io/Tika/ru/reviews/otzyv-anna-moskva/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ramashery.github.io/Tika/ru/reviews/otzyv-anna-moskva/"/>
+    <xhtml:link rel="alternate" hreflang="ka" href="https://ramashery.github.io/Tika/ka/reviews/gamokhmaureba-ana-moskovi/"/>
+  </url>
+  <url>
+    <loc>https://ramashery.github.io/Tika/ka/reviews/gamokhmaureba-ana-moskovi/</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ramashery.github.io/Tika/ru/reviews/otzyv-anna-moskva/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://ramashery.github.io/Tika/ru/reviews/otzyv-anna-moskva/"/>
+    <xhtml:link rel="alternate" hreflang="ka" href="https://ramashery.github.io/Tika/ka/reviews/gamokhmaureba-ana-moskovi/"/>
+  </url>
+</urlset>
