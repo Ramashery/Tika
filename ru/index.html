@@ -45,8 +45,8 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.bunny.net/css?family=amaranth:400,400i,700,700i|asap-condensed:200,300i,400,400i,600,600i,700,700i,900,900i|kode-mono:400,500,600,700" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=kode-mono:400,500,600,700" rel="stylesheet" />
     <link rel="stylesheet" href="/Tika/styles.css">
 
     
@@ -93,19 +93,39 @@
     </div>
 
     <main>
+        <!-- ═══ HERO ═══ -->
         <section id="hero" class="hero">
-            <div class="hero-eyebrow animate-always is-visible" id="hero-eyebrow">TIKA · ГРУЗИНСКИЙ ЯЗЫК</div>
-            <h1 class="animate-always is-visible" id="hero-h1">Грузинский язык для русскоязычных</h1>
-            <div class="hero-subtitle-container animate-always" id="hero-subtitle"><p>Онлайн и офлайн уроки с носителем языка. Разговорный грузинский, письмо, культура.</p></div>
+            <div class="hero-geo-letter" aria-hidden="true" id="hero-geo-letter">მ</div>
+
+            <div class="hero-inner">
+                <div class="hero-eyebrow animate-always is-visible" id="hero-eyebrow">TIKA · ГРУЗИНСКИЙ ЯЗЫК</div>
+                <h1 class="animate-always is-visible" id="hero-h1">Грузинский язык для русскоязычных</h1>
+                <div class="hero-subtitle-container animate-always" id="hero-subtitle"><p>Онлайн и офлайн уроки с носителем языка. Разговорный грузинский, письмо, культура.</p></div>
+            </div>
+
+            <!-- Бегущая строка грузинского алфавита -->
+            <div class="hero-alphabet" aria-hidden="true">
+                <div class="alpha-ticker">
+                    <span class="alpha-track">ა · ბ · გ · დ · ე · ვ · ზ · თ · ი · კ · ლ · მ · ნ · ო · პ · ჟ · რ · ს · ტ · უ · ფ · ქ · ღ · ყ · შ · ჩ · ც · ძ · წ · ჭ · ხ · ჯ · ჰ &nbsp;&nbsp;&nbsp;</span>
+                    <span class="alpha-track" aria-hidden="true">ა · ბ · გ · დ · ე · ვ · ზ · თ · ი · კ · ლ · მ · ნ · ო · პ · ჟ · რ · ს · ტ · უ · ფ · ქ · ღ · ყ · შ · ჩ · ც · ძ · წ · ჭ · ხ · ჯ · ჰ &nbsp;&nbsp;&nbsp;</span>
+                </div>
+            </div>
         </section>
+
+        <!-- ═══ DIVIDER ═══ -->
+        <div class="section-divider" aria-hidden="true">
+            <span class="divider-line"></span>
+            <span class="divider-glyph">✦</span>
+            <span class="divider-line"></span>
+        </div>
 
         
         
 
         
         <section id="services">
-            <h2 class="animate-on-scroll section-title" 
-                data-label-ru="Услуги" 
+            <h2 class="animate-on-scroll section-title"
+                data-label-ru="Услуги"
                 data-label-ka="სერვისები">Услуги</h2>
             <div class="item-grid">
             
@@ -149,8 +169,8 @@
         </section>
         
         <section id="blog">
-            <h2 class="animate-on-scroll section-title" 
-                data-label-ru="Блог" 
+            <h2 class="animate-on-scroll section-title"
+                data-label-ru="Блог"
                 data-label-ka="ბლოგი">Блог</h2>
             <div class="item-grid">
             
@@ -176,8 +196,8 @@
         </section>
         
         <section id="creative">
-            <h2 class="animate-on-scroll section-title" 
-                data-label-ru="Творческое" 
+            <h2 class="animate-on-scroll section-title"
+                data-label-ru="Творческое"
                 data-label-ka="შემოქმედება">Творческое</h2>
             <div class="item-grid">
             
@@ -203,8 +223,8 @@
         </section>
         
         <section id="reviews">
-            <h2 class="animate-on-scroll section-title" 
-                data-label-ru="Отзывы" 
+            <h2 class="animate-on-scroll section-title"
+                data-label-ru="Отзывы"
                 data-label-ka="გამოხმაურებები">Отзывы</h2>
             <div class="item-grid">
             
